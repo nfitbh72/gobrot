@@ -1,0 +1,5 @@
+*.png
+.vs
+*.sln
+*.vcxproj*
+
