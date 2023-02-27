@@ -7,6 +7,7 @@ import (
     "wilf/gobrot/pkg/images"
     "wilf/gobrot/pkg/xml"
     "wilf/gobrot/pkg/cli"
+    "wilf/gobrot/pkg/canvas"
 )
 
 type TMain struct {
@@ -14,6 +15,7 @@ type TMain struct {
     Image slicetoimage.ImageConfig
     CLI cli.CLI
     Pixels [][]uint16
+    Canvas canvas.Canvas
 }
 
 func (m *TMain) setHeight(arguments []int) {
@@ -94,9 +96,17 @@ func (m *TMain) showConfig(arguments []string) {
     fmt.Println(m.Image)
 }
 
-//var mandelConfig mandelbrot.MandelConfig
-//var imageConfig slicetoimage.ImageConfig
-//var clint cli.CLI
+func (m *TMain) flatMap(x uint16, y uint16) float64 {
+    return 0.5
+}
+
+func (m *TMain) canvas(arguments []string) {
+     m.Canvas = canvas.Canvas{
+        Map: Main.flatMap,
+        InPixels: m.Pixels,
+    }
+    m.Canvas.Run()
+}
 
 var Main TMain
 
@@ -133,6 +143,7 @@ func main() {
     Main.CLI.AddCommand("go", 0, 0, Main.buildMandel, "Runs the algorithm, outputs the png(s)")
     Main.CLI.AddCommand("layers", 1, 0, Main.setLayers, "If you want many pngs for different layers then specify percentages for which the layer breaks exist (do not include 0 or 100, these are assumed)")
     Main.CLI.AddCommand("ascii", 1, 2, Main.buildMandelAscii, "Displays an ascii version of the Mandelbrot - specify width and height")
+    Main.CLI.AddCommand("canvas", 0, 0, Main.canvas, "Applies the fractal to a canvas")
     //clint.AddCommand("nil", 0, 0, nil)
     Main.CLI.AddMultiLineCommand("<?xml version='1.0'?>", "</mandelbrot_settings_2>", Main.loadXml, "Imports XML from https://math.hws.edu/eck/js/mandelbrot/MB.html")
 

@@ -1,12 +1,8 @@
 package mandelbrot
 
 import (
-    //"image"
-    //"image/color"
-    // "image/png"
     "math/cmplx"
     "sync"
-    //"os"
     "fmt"
 )
 
