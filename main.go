@@ -8,12 +8,12 @@ import (
     "wilf/gobrot/pkg/xml"
     "wilf/gobrot/pkg/cli"
     "wilf/gobrot/pkg/canvas"
-    "math"
+    //"math"
 )
 
 type TMain struct {
-    Mandel mandelbrot.MandelConfig
-    Image slicetoimage.ImageConfig
+    Mandel mandelbrot.TMandelConfig
+    Image slicetoimage.TImageConfig
     CLI cli.CLI
     Pixels [][]uint16
     Canvas canvas.TCanvas
@@ -97,25 +97,12 @@ func (m *TMain) showConfig(arguments []string) {
     fmt.Println(m.Image)
 }
 
-func (m *TMain) pyramidMap(x float64, y float64) float64 {
-    val := 1 - (math.Abs(x) + math.Abs(y)) / 2
-    //fmt.Println(x, y, val)
-    return val
-}
 
-func (m *TMain) domeMap(x float64, y float64) float64 {
-    x = (x - 0.5) * 2.0
-    y = (y - 0.5) * 2.0
-    val := (math.Cos(x*math.Pi) + math.Cos(y*math.Pi)) / 2.0
-    //fmt.Println(x, y, val)
-    return val
-}
 
 func (m *TMain) canvas(arguments []string) {
      m.Canvas = canvas.TCanvas{
-        Map: Main.domeMap,
         InPixels: m.Pixels,
-        MandelEffect: 0.2,
+        MandelEffect: 0.1,
     }
     m.Canvas.Run(m.Mandel.Width, m.Mandel.Height, m.Mandel.MaxIterations)
     m.Image.SaveImage(m.Canvas.OutPixels)
@@ -126,16 +113,16 @@ var Main TMain
 func main() {
     //default config
     layers := [][]int{{0, 100}, {100, 100}, {100, 100}, {100, 100}}
-    Main.Mandel = mandelbrot.MandelConfig{
-        Width: uint16(1024),
-        Height: 1024,
+    Main.Mandel = mandelbrot.TMandelConfig{
+        Width: uint16(8161),
+        Height: 8161,
         Xmin: -2.0,
         Xmax: 0.5,
         Ymin: -1.25,
         Ymax: 1.25,
         MaxIterations: 2047,
     }
-    Main.Image = slicetoimage.ImageConfig{
+    Main.Image = slicetoimage.TImageConfig{
         Layers: layers,
         FilenameBase: "./out",
     }
