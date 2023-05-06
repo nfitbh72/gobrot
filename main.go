@@ -34,6 +34,11 @@ func (m *TMain) setMaxIterations(arguments []int) {
     fmt.Println("max iterations set to", m.Mandel.MaxIterations)
 }
 
+func (m *TMain) setCanvasStrength(arguments[] float64) {
+    m.Canvas.MandelEffect = 1.0 - arguments[0]
+    fmt.Println("mandel effect set to", m.Canvas.MandelEffect)
+}
+
 func (m *TMain) setCoords(arguments []float64) {
     m.Mandel.Xmin = arguments[0]
     m.Mandel.Xmax = arguments[1]
@@ -97,8 +102,6 @@ func (m *TMain) showConfig(arguments []string) {
     fmt.Println(m.Image)
 }
 
-
-
 func (m *TMain) canvas(arguments []string) {
      m.Canvas = canvas.TCanvas{
         InPixels: m.Pixels,
@@ -138,12 +141,14 @@ func main() {
     Main.CLI.AddCommand("height", 1, 1, Main.setHeight, "Sets the height in pixels of the output")
     Main.CLI.AddCommand("width", 1, 1, Main.setWidth, "Sets the width in pixels of the output")
     Main.CLI.AddCommand("iterations", 1, 1, Main.setMaxIterations, "Sets the maximum iterations of the mandelbrot algorithm")
+    Main.CLI.AddCommand("cstr", 1, 1, Main.setCanvasStrength, "Sets the strength of the canvas (compared to the fractal)")
     Main.CLI.AddCommand("coords", 4, 4, Main.setCoords, "Sets the real-min, imaginary-min, real-max, imaginary-max values")
     Main.CLI.AddCommand("config", 0, 0, Main.showConfig, "Displays the configuration currently being used")
     Main.CLI.AddCommand("go", 0, 0, Main.buildMandel, "Runs the algorithm, outputs the png(s)")
     Main.CLI.AddCommand("layers", 1, 0, Main.setLayers, "If you want many pngs for different layers then specify percentages for which the layer breaks exist (do not include 0 or 100, these are assumed)")
     Main.CLI.AddCommand("ascii", 1, 2, Main.buildMandelAscii, "Displays an ascii version of the Mandelbrot - specify width and height")
     Main.CLI.AddCommand("canvas", 0, 0, Main.canvas, "Applies the fractal to a canvas")
+
     //clint.AddCommand("nil", 0, 0, nil)
     Main.CLI.AddMultiLineCommand("<?xml version='1.0'?>", "</mandelbrot_settings_2>", Main.loadXml, "Imports XML from https://math.hws.edu/eck/js/mandelbrot/MB.html")
 
