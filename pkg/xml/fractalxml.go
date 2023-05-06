@@ -3,14 +3,19 @@ package fractalxml
 import (
 	"encoding/xml"
 	"fmt"
+	"strconv"
 )
-type MandelbrotXMLSettings struct {
+
+//struct for the top level xml
+type TMandelbrotXMLSettings struct {
 	XMLName xml.Name `xml:"mandelbrot_settings_2"`
-	Coords Coords `xml:"limits"`
-	Iterations Iterations `xml:"max_iterations"`
+	Coords TCoords `xml:"limits"`
+	Iterations TIterations `xml:"max_iterations"`
+	ImageSize TImageSize `xml:"image_size"`
 }
 
-type Coords struct {
+//struct for the coords part of the xml
+type TCoords struct {
 	XMLName xml.Name `xml:"limits"`
 	XMin string `xml:"xmin"`
 	YMin string `xml:"ymin"`
@@ -18,21 +23,86 @@ type Coords struct {
 	YMax string `xml:"ymax"`
 }
 
-type Iterations struct {
+//struct for the iterations part of the xml
+type TIterations struct {
 	XMLName xml.Name `xml:"max_iterations"`
 	Max string `xml:"value,attr"`
 }
 
-func GetMandelBrotSettings(fractalXmlBytes []byte) MandelbrotXMLSettings {
-	var mandelbrotXMLSettings MandelbrotXMLSettings
-	xml.Unmarshal(fractalXmlBytes, &mandelbrotXMLSettings);
+//struct for the image size part of the xml
+type TImageSize struct {
+	XMLName xml.Name `xml:"image_size"`
+	Width string `xml:"width,attr"`
+	Height string `xml:"height,attr"`
+}
+
+//parses the XML and returns a new TMandelbrotXMLSettings object
+func GetMandelBrotSettingsFromString(fractalXml string) TMandelbrotXMLSettings {
+	var mandelbrotXMLSettings TMandelbrotXMLSettings
+	xml.Unmarshal([]byte(fractalXml), &mandelbrotXMLSettings);
+	mandelbrotXMLSettings.FixAspectBug()
+	fmt.Println(mandelbrotXMLSettings)
 	return mandelbrotXMLSettings
 }
 
-func GetMandelBrotSettingsFromString(fractalXml string) MandelbrotXMLSettings {
-	fractalXmlBytes := []byte(fractalXml)
-	return GetMandelBrotSettings(fractalXmlBytes)
+//assumes no error
+func strToFloat64(s string) float64 {
+    f, _ := strconv.ParseFloat(s, 64)
+    return f
 }
+
+func strToUint16(s string) uint16 {
+	i, _ := strconv.ParseUint(s, 10, 16)
+	return uint16(i)
+}
+
+//there is a bug in the XML where if you change the aspect ratio the y min/max assumes the 800x600 ratio
+func (settings *TMandelbrotXMLSettings) FixAspectBug() {
+	min := settings.GetMin()
+	max := settings.GetMax()
+	//width := float64(settings.GetWidth())
+	//height := float64(settings.GetHeight())
+	deltaX := real(max) - real(min)
+	deltaY := imag(max) - imag(min)
+	diff := deltaX - deltaY
+	minY := imag(min) - diff / 2.0
+	maxY := imag(max) + diff / 2.0
+	settings.Coords.YMin = fmt.Sprintf("%e", minY)
+	settings.Coords.YMax = fmt.Sprintf("%e", maxY)
+}
+
+
+//gets the minX, minY
+func (settings *TMandelbrotXMLSettings) GetMin() complex128 {
+	return complex(
+		strToFloat64(settings.Coords.XMin),
+		strToFloat64(settings.Coords.YMin),
+	)
+}
+
+//gets the maxX, maxY
+func (settings *TMandelbrotXMLSettings) GetMax() complex128 {
+	return complex(
+		strToFloat64(settings.Coords.XMax),
+		strToFloat64(settings.Coords.YMax),
+	)
+}
+
+//gets the max iterations
+func (settings *TMandelbrotXMLSettings) GetMaxIterations() uint16 {
+	return strToUint16(settings.Iterations.Max)
+}
+
+//gets the width
+func (settings *TMandelbrotXMLSettings) GetWidth() uint16 {
+	return strToUint16(settings.ImageSize.Width)
+}
+
+//gets the height
+func (settings *TMandelbrotXMLSettings) GetHeight() uint16 {
+	return strToUint16(settings.ImageSize.Height)
+}
+
 
 func TestFractalXml() {
 	testXml := `<?xml version='1.0'?>

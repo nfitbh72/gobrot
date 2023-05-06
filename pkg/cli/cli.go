@@ -9,7 +9,7 @@ import (
 	"reflect"
 )
 
-type Command struct {
+type TCommand struct {
 	Callback any //func([]int)|func([]float64)|func([]string)
 	Keyword string
 	MinArguments uint16
@@ -17,22 +17,22 @@ type Command struct {
 	HelpText []string
 }
 
-type MultiLineCommand struct {
+type TMultiLineCommand struct {
 	firstLine string
 	lastLine string
 	callback func(string)
 	helpText []string
 }
 
-type CLI struct {
-	Commands []Command
-	MultiLineCommands []MultiLineCommand
+type TCLI struct {
+	Commands []TCommand
+	MultiLineCommands []TMultiLineCommand
 	HelpText string
 	Finish bool
 	Test []string
 }
 
-func (clinterface *CLI) AddCommand(keyword string, minArguments uint16, maxArguments uint16, callback any, helpText ...string) {
+func (clinterface *TCLI) AddCommand(keyword string, minArguments uint16, maxArguments uint16, callback any, helpText ...string) {
 	//fmt.Println("start commands", clinterface.Commands)
 	//fmt.Println(reflect.TypeOf(callback))
 	if (callback != nil) {
@@ -45,7 +45,7 @@ func (clinterface *CLI) AddCommand(keyword string, minArguments uint16, maxArgum
 		if (!allowedTypes[typeString]) {
 			fmt.Println("callback type not allowed:", typeString)
 		} else {
-			nc:= Command {
+			nc:= TCommand {
 				Callback: callback,
 				Keyword: keyword,
 				MinArguments: minArguments,
@@ -62,11 +62,11 @@ func (clinterface *CLI) AddCommand(keyword string, minArguments uint16, maxArgum
 	//fmt.Println("commands", clinterface.Commands)
 }
 
-func (clinterface *CLI) TestMe(str string) {
+func (clinterface *TCLI) TestMe(str string) {
 	clinterface.Test = append(clinterface.Test, str)
 }
 
-func (clinterface *CLI) Help(arguments []string) {
+func (clinterface *TCLI) Help(arguments []string) {
 	if len(arguments) == 0 {
 		fmt.Println(clinterface.HelpText)
 		fmt.Println("");
@@ -114,8 +114,8 @@ func (clinterface *CLI) Help(arguments []string) {
 	}
 }
 
-func (clinterface *CLI) AddMultiLineCommand(firstLine string, lastLine string, callback func(string), helpText ...string) {
-	mlc := MultiLineCommand {
+func (clinterface *TCLI) AddMultiLineCommand(firstLine string, lastLine string, callback func(string), helpText ...string) {
+	mlc := TMultiLineCommand {
 		firstLine: firstLine,
 		lastLine: lastLine,
 		callback: callback,
@@ -124,12 +124,12 @@ func (clinterface *CLI) AddMultiLineCommand(firstLine string, lastLine string, c
 	clinterface.MultiLineCommands = append(clinterface.MultiLineCommands, mlc)
 }
 
-func (clinterface *CLI) exit(arguments []string) {
+func (clinterface *TCLI) exit(arguments []string) {
 	fmt.Println("Bye!\n")
 	clinterface.Finish = true
 }
 
-func (clinterface *CLI) Run() {
+func (clinterface *TCLI) Run() {
 	clinterface.Finish = false
 	//add exit function
 	clinterface.AddCommand("exit", 0, 0, clinterface.exit, "exit: quits this program")
@@ -138,7 +138,7 @@ func (clinterface *CLI) Run() {
 
 	reader := bufio.NewReader(os.Stdin)
 	multiLine := false
-	var currentMultiLineCommand MultiLineCommand
+	var currentMultiLineCommand TMultiLineCommand
 	buffer := ""
     for !clinterface.Finish {
 		if (!multiLine) {

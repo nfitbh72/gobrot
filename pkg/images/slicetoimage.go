@@ -9,21 +9,23 @@ import (
     "strconv"
 )
 
-type TImageConfig struct {
+type TImage struct {
     Layers [][]int
     FilenameBase string
 }
 
-func PrintAscii(pixels [][]uint16, width uint16, height uint16, maxIterations uint16) {
+func PrintAscii(pixels [][]float64, width uint16, height uint16, maxIterations uint16) {
+    //for i, pxs := range pixels {
+    //    x := uint16(float64(i) * float64(len(pixels)) / float64(height))
 	for j := uint16(0); j < height; j++ {
         y := uint16(float64(j) * float64(len(pixels)) / float64(height))
 		for i := uint16(0); i < width; i++ {
             x := uint16(float64(i) * float64(len(pixels[0])) / float64(width))
-			var pixel uint16 = pixels[y][x];
+			pixel := pixels[x][y];
             //fmt.Println(x, y, pixel)
-			if (pixel == maxIterations) {
+			if (pixel > 0.95) {
                 fmt.Print("M")
-            } else if (pixel > (maxIterations / 4)) {
+            } else if (pixel > 0.25) {
                 fmt.Print("x")
             } else {
                 fmt.Print(".")
@@ -33,18 +35,18 @@ func PrintAscii(pixels [][]uint16, width uint16, height uint16, maxIterations ui
 	}
 }
 
-func (imageConfig TImageConfig) SaveImage(pixels [][]uint16) {
-    var imgs []*image.Gray16 = imageConfig.getimagesfrompixels(pixels)
+func (img *TImage) SaveImage(pixels [][]float64) {
+    var images []*image.Gray16 = img.GetImagesFromPixels(pixels)
     
-    for i, img := range imgs {
-        filename := imageConfig.FilenameBase + strconv.Itoa(i) + ".png"
+    for n, i := range images {
+        filename := img.FilenameBase + strconv.Itoa(n) + ".png"
         fmt.Println("saving", filename)
         out, err := os.Create(filename);
         if err != nil {
             fmt.Println(err)
             os.Exit(1)
         }
-        err = png.Encode(out, img)
+        err = png.Encode(out, i)
         if err != nil {
             fmt.Println(err)
             os.Exit(1)
@@ -53,50 +55,53 @@ func (imageConfig TImageConfig) SaveImage(pixels [][]uint16) {
     }
 }
 
-func getmaxiterations(pixels [][]uint16) uint16 {
-    var max uint16 = 0
-    for j:= range pixels {
-        for i:= range pixels[j] {
-            if (pixels[j][i] > max) {
-                max = pixels[j][i]
+/*
+func getmaxiterations(pixels [][]float64) float64 {
+    var max float64 = 0.0
+    for i:= range pixels {
+        for j:= range pixels[i] {
+            if (pixels[i][j] > max) {
+                max = pixels[i][j]
             }
         }
     }
     return max
 }
+*/
 
-func (imageConfig TImageConfig) getimagesfrompixels(pixels [][]uint16) []*image.Gray16 {
-    width := len(pixels[0])
-    height := len(pixels)
-    max := getmaxiterations(pixels)
+func (img *TImage) GetImagesFromPixels(pixels [][]float64) []*image.Gray16 {
+    width := len(pixels)
+    height := len(pixels[0])
+    //max := getmaxiterations(pixels)
     //foreach layer
     var imgs = []*image.Gray16{}
     minC := uint16(65535)
     maxC := uint16(0)
-    for _, layer := range imageConfig.Layers {
+    for _, layer := range img.Layers {
         img := image.NewGray16(image.Rect(0, 0, width, height))
         count := 0
-        for j:= 0; j < height; j++ {
-            for i := 0; i < width; i++ {
-                //force to 65535 -> 0 range
-                col := 65535.0 - float64(pixels[j][i]) * 65535.0 / float64(max)
+        for i:= 0; i < width; i++ {
+            for j := 0; j < height; j++ {
 
+                colPercent := pixels[i][j]
+
+                //force to 65535 -> 0 range
+                col:= uint16(65535) - uint16(colPercent * 65535.0)
+                
                 //the pixel should be 0 if it is not in the current layer
-                colPercent := col / 655.35
                 if (colPercent < float64(layer[0]) || colPercent > float64(layer[1])) {
-                    col = 0.0
+                    col = uint16(0)
                 } else {
                     count++
                 }
 
-                var c uint16 = uint16(col)
-                if (c < minC) {
-                    minC = c
-                }
-                if (c > maxC) {
-                    maxC = c
-                }
-                img.SetGray16(i, j, color.Gray16{c})
+                if (col < minC) { minC = col }
+                if (col > maxC) { maxC = col }
+                img.SetGray16(
+                    i,
+                    height - j,//row 0 is the top row in an image, our rows start from the bottom
+                    color.Gray16{col},
+                )
             }
         }
         imgs = append(imgs, img)
@@ -104,6 +109,6 @@ func (imageConfig TImageConfig) getimagesfrompixels(pixels [][]uint16) []*image.
             break
         }
     }
-    fmt.Println("MinC: ",minC, "; MaxC: ", maxC)
+    fmt.Println("MinCol: ",minC, "; MaxCol: ", maxC)
     return imgs
 }
