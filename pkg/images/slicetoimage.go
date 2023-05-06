@@ -9,7 +9,7 @@ import (
     "strconv"
 )
 
-type ImageConfig struct {
+type TImageConfig struct {
     Layers [][]int
     FilenameBase string
 }
@@ -33,7 +33,7 @@ func PrintAscii(pixels [][]uint16, width uint16, height uint16, maxIterations ui
 	}
 }
 
-func (imageConfig ImageConfig) SaveImage(pixels [][]uint16) {
+func (imageConfig TImageConfig) SaveImage(pixels [][]uint16) {
     var imgs []*image.Gray16 = imageConfig.getimagesfrompixels(pixels)
     
     for i, img := range imgs {
@@ -65,12 +65,14 @@ func getmaxiterations(pixels [][]uint16) uint16 {
     return max
 }
 
-func (imageConfig ImageConfig) getimagesfrompixels(pixels [][]uint16) []*image.Gray16 {
+func (imageConfig TImageConfig) getimagesfrompixels(pixels [][]uint16) []*image.Gray16 {
     width := len(pixels[0])
     height := len(pixels)
     max := getmaxiterations(pixels)
     //foreach layer
     var imgs = []*image.Gray16{}
+    minC := uint16(65535)
+    maxC := uint16(0)
     for _, layer := range imageConfig.Layers {
         img := image.NewGray16(image.Rect(0, 0, width, height))
         count := 0
@@ -88,6 +90,12 @@ func (imageConfig ImageConfig) getimagesfrompixels(pixels [][]uint16) []*image.G
                 }
 
                 var c uint16 = uint16(col)
+                if (c < minC) {
+                    minC = c
+                }
+                if (c > maxC) {
+                    maxC = c
+                }
                 img.SetGray16(i, j, color.Gray16{c})
             }
         }
@@ -96,5 +104,6 @@ func (imageConfig ImageConfig) getimagesfrompixels(pixels [][]uint16) []*image.G
             break
         }
     }
+    fmt.Println("MinC: ",minC, "; MaxC: ", maxC)
     return imgs
 }

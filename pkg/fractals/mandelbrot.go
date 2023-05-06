@@ -1,16 +1,12 @@
 package mandelbrot
 
 import (
-    //"image"
-    //"image/color"
-    // "image/png"
     "math/cmplx"
     "sync"
-    //"os"
     "fmt"
 )
 
-type MandelConfig struct {
+type TMandelConfig struct {
     Width uint16
     Height uint16
     Xmin float64
@@ -20,7 +16,7 @@ type MandelConfig struct {
     MaxIterations uint16
 }
 
-func (mandel MandelConfig) GetMandel() [][]uint16 {
+func (mandel TMandelConfig) GetMandel() [][]uint16 {
 
     var pixels = make([][]uint16, mandel.Height)
     for i := range pixels {

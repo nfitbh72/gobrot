@@ -7,13 +7,16 @@ import (
     "wilf/gobrot/pkg/images"
     "wilf/gobrot/pkg/xml"
     "wilf/gobrot/pkg/cli"
+    "wilf/gobrot/pkg/canvas"
+    //"math"
 )
 
 type TMain struct {
-    Mandel mandelbrot.MandelConfig
-    Image slicetoimage.ImageConfig
+    Mandel mandelbrot.TMandelConfig
+    Image slicetoimage.TImageConfig
     CLI cli.CLI
     Pixels [][]uint16
+    Canvas canvas.TCanvas
 }
 
 func (m *TMain) setHeight(arguments []int) {
@@ -29,6 +32,11 @@ func (m TMain) setWidth(arguments []int) {
 func (m *TMain) setMaxIterations(arguments []int) {
     m.Mandel.MaxIterations = uint16(arguments[0])
     fmt.Println("max iterations set to", m.Mandel.MaxIterations)
+}
+
+func (m *TMain) setCanvasStrength(arguments[] float64) {
+    m.Canvas.MandelEffect = 1.0 - arguments[0]
+    fmt.Println("mandel effect set to", m.Canvas.MandelEffect)
 }
 
 func (m *TMain) setCoords(arguments []float64) {
@@ -94,16 +102,21 @@ func (m *TMain) showConfig(arguments []string) {
     fmt.Println(m.Image)
 }
 
-//var mandelConfig mandelbrot.MandelConfig
-//var imageConfig slicetoimage.ImageConfig
-//var clint cli.CLI
+func (m *TMain) canvas(arguments []string) {
+     m.Canvas = canvas.TCanvas{
+        InPixels: m.Pixels,
+        MandelEffect: 0.1,
+    }
+    m.Canvas.Run(m.Mandel.Width, m.Mandel.Height, m.Mandel.MaxIterations)
+    m.Image.SaveImage(m.Canvas.OutPixels)
+}
 
 var Main TMain
 
 func main() {
     //default config
     layers := [][]int{{0, 100}, {100, 100}, {100, 100}, {100, 100}}
-    Main.Mandel = mandelbrot.MandelConfig{
+    Main.Mandel = mandelbrot.TMandelConfig{
         Width: uint16(8161),
         Height: 8161,
         Xmin: -2.0,
@@ -112,7 +125,7 @@ func main() {
         Ymax: 1.25,
         MaxIterations: 2047,
     }
-    Main.Image = slicetoimage.ImageConfig{
+    Main.Image = slicetoimage.TImageConfig{
         Layers: layers,
         FilenameBase: "./out",
     }
@@ -128,11 +141,14 @@ func main() {
     Main.CLI.AddCommand("height", 1, 1, Main.setHeight, "Sets the height in pixels of the output")
     Main.CLI.AddCommand("width", 1, 1, Main.setWidth, "Sets the width in pixels of the output")
     Main.CLI.AddCommand("iterations", 1, 1, Main.setMaxIterations, "Sets the maximum iterations of the mandelbrot algorithm")
+    Main.CLI.AddCommand("cstr", 1, 1, Main.setCanvasStrength, "Sets the strength of the canvas (compared to the fractal)")
     Main.CLI.AddCommand("coords", 4, 4, Main.setCoords, "Sets the real-min, imaginary-min, real-max, imaginary-max values")
     Main.CLI.AddCommand("config", 0, 0, Main.showConfig, "Displays the configuration currently being used")
     Main.CLI.AddCommand("go", 0, 0, Main.buildMandel, "Runs the algorithm, outputs the png(s)")
     Main.CLI.AddCommand("layers", 1, 0, Main.setLayers, "If you want many pngs for different layers then specify percentages for which the layer breaks exist (do not include 0 or 100, these are assumed)")
     Main.CLI.AddCommand("ascii", 1, 2, Main.buildMandelAscii, "Displays an ascii version of the Mandelbrot - specify width and height")
+    Main.CLI.AddCommand("canvas", 0, 0, Main.canvas, "Applies the fractal to a canvas")
+
     //clint.AddCommand("nil", 0, 0, nil)
     Main.CLI.AddMultiLineCommand("<?xml version='1.0'?>", "</mandelbrot_settings_2>", Main.loadXml, "Imports XML from https://math.hws.edu/eck/js/mandelbrot/MB.html")
 
