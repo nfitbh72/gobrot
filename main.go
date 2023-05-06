@@ -11,11 +11,12 @@ import (
     //"math"
 )
 
+//keeping all the main data here
 type TMain struct {
-    Mandel mandelbrot.TMandelConfig
-    Image slicetoimage.TImageConfig
-    CLI cli.CLI
-    Pixels [][]uint16
+    Mandel mandelbrot.TMandel
+    Image slicetoimage.TImage
+    CLI cli.TCLI
+    Pixels [][]float64
     Canvas canvas.TCanvas
 }
 
@@ -24,7 +25,7 @@ func (m *TMain) setHeight(arguments []int) {
     fmt.Println("Height set to", m.Mandel.Height)
 }
 
-func (m TMain) setWidth(arguments []int) {
+func (m *TMain) setWidth(arguments []int) {
     m.Mandel.Width = uint16(arguments[0])
     fmt.Println("width set to", m.Mandel.Width)
 }
@@ -40,11 +41,9 @@ func (m *TMain) setCanvasStrength(arguments[] float64) {
 }
 
 func (m *TMain) setCoords(arguments []float64) {
-    m.Mandel.Xmin = arguments[0]
-    m.Mandel.Xmax = arguments[1]
-    m.Mandel.Ymin = arguments[2]
-    m.Mandel.Ymax = arguments[3]
-    fmt.Println("coords", m.Mandel.Xmin, m.Mandel.Xmax, m.Mandel.Ymin, m.Mandel.Ymax)
+    m.Mandel.Min = complex(arguments[0], arguments[2])
+    m.Mandel.Max = complex(arguments[1], arguments[3])
+    fmt.Println("coords", m.Mandel.Min, m.Mandel.Max)
 }
 
 func (m *TMain) setFilename(arguments []string) {
@@ -60,19 +59,17 @@ func (m *TMain) buildMandelAscii(arguments []int) {
     asciiMandelConfig := m.Mandel
     asciiMandelConfig.Width = uint16(arguments[0])
     asciiMandelConfig.Height = uint16(arguments[1])
-    var pixels[][]uint16 = asciiMandelConfig.GetMandel()
+    var pixels[][]float64 = asciiMandelConfig.GetMandel()
     slicetoimage.PrintAscii(pixels, asciiMandelConfig.Width, asciiMandelConfig.Height, asciiMandelConfig.MaxIterations)
 }
 
 func (m *TMain) loadXml(xml string) {
     mandelbrotSettings := fractalxml.GetMandelBrotSettingsFromString(xml);
-    m.Mandel.Xmin, _ = strconv.ParseFloat(mandelbrotSettings.Coords.XMin, 64)
-    m.Mandel.Ymin, _ = strconv.ParseFloat(mandelbrotSettings.Coords.YMin, 64)
-    m.Mandel.Xmax, _ = strconv.ParseFloat(mandelbrotSettings.Coords.XMax, 64)
-    m.Mandel.Ymax, _ = strconv.ParseFloat(mandelbrotSettings.Coords.YMax, 64)
-    its, _ := strconv.ParseUint(mandelbrotSettings.Iterations.Max, 10, 16)
-    m.Mandel.MaxIterations = uint16(its)
-    fmt.Println("Firing up the threads to generate Mandelbrot")
+    m.Mandel.Min = mandelbrotSettings.GetMin()
+    m.Mandel.Max = mandelbrotSettings.GetMax()
+    m.Mandel.MaxIterations = mandelbrotSettings.GetMaxIterations()
+    fmt.Println("Mandel configured with", m.Mandel.Min, m.Mandel.Max, m.Mandel.MaxIterations)
+    //delta := m.Mandel.Max - m.Mandel.Min
 }
 
 func (m *TMain) setLayers(arguments []string) {
@@ -97,47 +94,46 @@ func (m *TMain) setLayers(arguments []string) {
     fmt.Println("layers set", m.Image.Layers)
 }
 
-func (m *TMain) showConfig(arguments []string) {
-    fmt.Println(m.Mandel)
-    fmt.Println(m.Image)
+func (main *TMain) showConfig(arguments []string) {
+    fmt.Println(main.Mandel)
+    fmt.Println(main.Image)
 }
 
-func (m *TMain) canvas(arguments []string) {
-     m.Canvas = canvas.TCanvas{
-        InPixels: m.Pixels,
+//command to execute the canvas
+func (main *TMain) canvas(arguments []string) {
+     main.Canvas = canvas.TCanvas{
+        InPixels: main.Pixels,
         MandelEffect: 0.1,
     }
-    m.Canvas.Run(m.Mandel.Width, m.Mandel.Height, m.Mandel.MaxIterations)
-    m.Image.SaveImage(m.Canvas.OutPixels)
+    main.Canvas.Run(main.Mandel.Width, main.Mandel.Height, main.Mandel.MaxIterations)
+    main.Image.SaveImage(main.Canvas.OutPixels)
 }
 
 var Main TMain
 
 func main() {
-    //default config
-    layers := [][]int{{0, 100}, {100, 100}, {100, 100}, {100, 100}}
-    Main.Mandel = mandelbrot.TMandelConfig{
+    //default config for mandelbrot
+    Main.Mandel = mandelbrot.TMandel {
         Width: uint16(8161),
         Height: 8161,
-        Xmin: -2.0,
-        Xmax: 0.5,
-        Ymin: -1.25,
-        Ymax: 1.25,
+        Min: -2.0 - 1.25i,
+        Max: 0.5 + 1.25i,
         MaxIterations: 2047,
     }
-    Main.Image = slicetoimage.TImageConfig{
-        Layers: layers,
+
+    //default config for image output
+    Main.Image = slicetoimage.TImage {
+        Layers: [][]int{{0, 100}, {100, 100}, {100, 100}, {100, 100}},
         FilenameBase: "./out",
     }
-    Main.CLI = cli.CLI{
-        Commands: []cli.Command{},
+
+    //create the CLI
+    Main.CLI = cli.TCLI{
+        Commands: []cli.TCommand{},
         HelpText: "This is GOBROT - it creates fractals in the form of PNG files.\nTo get more detailed help per command: GoBrot.exe help <command>",
     }
 
-    fmt.Println("Welcome to GOBROT")
-    fmt.Println()
-    fmt.Println("Add Commands / XML here:")
-
+    //add the commands to the CLI
     Main.CLI.AddCommand("height", 1, 1, Main.setHeight, "Sets the height in pixels of the output")
     Main.CLI.AddCommand("width", 1, 1, Main.setWidth, "Sets the width in pixels of the output")
     Main.CLI.AddCommand("iterations", 1, 1, Main.setMaxIterations, "Sets the maximum iterations of the mandelbrot algorithm")
@@ -148,10 +144,14 @@ func main() {
     Main.CLI.AddCommand("layers", 1, 0, Main.setLayers, "If you want many pngs for different layers then specify percentages for which the layer breaks exist (do not include 0 or 100, these are assumed)")
     Main.CLI.AddCommand("ascii", 1, 2, Main.buildMandelAscii, "Displays an ascii version of the Mandelbrot - specify width and height")
     Main.CLI.AddCommand("canvas", 0, 0, Main.canvas, "Applies the fractal to a canvas")
-
-    //clint.AddCommand("nil", 0, 0, nil)
     Main.CLI.AddMultiLineCommand("<?xml version='1.0'?>", "</mandelbrot_settings_2>", Main.loadXml, "Imports XML from https://math.hws.edu/eck/js/mandelbrot/MB.html")
 
+    //welcome message
+    fmt.Println("Welcome to GOBROT")
+    fmt.Println()
+    fmt.Println("Add Commands / XML here:")
+
+    //run the CLI
     Main.CLI.Run()
 
 }
