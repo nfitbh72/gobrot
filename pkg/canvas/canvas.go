@@ -3,6 +3,7 @@ package canvas
 import (
 	"fmt"
 	"math"
+	"reflect"
 )
 
 type TCanvas struct {
@@ -22,11 +23,27 @@ func reverseGeoPoint(z float64, maxN uint16) uint16 {
 }
 */
 
+//combines a canvas with the InPixels to form the OutPixels
 func (canvas *TCanvas) Run(mWidth uint16, mHeight uint16, mMaxIterations uint16) {
+	//check if canvas method name exists
+	canvasMethod := reflect.ValueOf(&canvas).MethodByName(canvas.CanvasMethodName)
+	if !canvasMethod.IsValid() {
+		fmt.Println(canvas.CanvasMethodName, "is not a valid method")
+		fmt.Println(canvasMethod)
+		return
+	}
+
+	//check if the InPixels have any data
+	if len(canvas.InPixels) == 0 {
+		fmt.Println("no data in InPixels")
+		return
+	}
+
 	canvas.OutPixels = make([][]float64, mHeight)
     for i := range canvas.OutPixels {
         canvas.OutPixels[i] = make([]float64, mWidth)
     }
+
 	//loop around the width and height
 	for x := uint16(0); x < mWidth; x++ {
 		i :=  canvas.getGeoPoint(x, mWidth)
@@ -45,7 +62,7 @@ func (canvas *TCanvas) Run(mWidth uint16, mHeight uint16, mMaxIterations uint16)
 			//get the mandel component of the end result - e.g. 20% MandelEffect
 			mandelZ := canvas.InPixels[y][x] * canvas.MandelEffect
 
-			//get the canvas component of the end result - e.g. 80% Canvas effect
+			//get the canvas component of the end result - e.g. (100 - 20) == 80% Canvas effect
 			canvasZ = canvasZ * (1.0 - canvas.MandelEffect)
 
 			//record the output of the 2 components
@@ -54,7 +71,7 @@ func (canvas *TCanvas) Run(mWidth uint16, mHeight uint16, mMaxIterations uint16)
 	}
 }
 
-func (canvas *TCanvas) semiCylinder(p complex128) float64 {
+func (c *TCanvas) semiCylinder(p complex128) float64 {
 	//turn y into -1 to 1
 	y := imag(p) * 2.0 - 1.0
 	val := math.Sqrt(1.0 - (y*y))
