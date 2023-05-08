@@ -42,8 +42,8 @@ func GetMandelBrotSettingsFromString(fractalXml string) TMandelbrotXMLSettings {
 	error := xml.Unmarshal([]byte(fractalXml), &mandelbrotXMLSettings);
 	if (error != nil) {
 		mandelbrotXMLSettings.FixAspectBug()
-	}
 		fmt.Println(mandelbrotXMLSettings)
+	}
 	return mandelbrotXMLSettings
 }
 
@@ -53,6 +53,7 @@ func strToFloat64(s string) float64 {
     return f
 }
 
+//assumes no error
 func strToUint16(s string) uint16 {
 	i, _ := strconv.ParseUint(s, 10, 16)
 	return uint16(i)
