@@ -50,15 +50,19 @@ func (m *TMain) setFilename(arguments []string) {
     m.Image.FilenameBase = arguments[0]
 }
 
+//actually generates the mandel and saves the image
 func (m *TMain) buildMandel(arguments []string) {
     m.Pixels = m.Mandel.GetMandel()
     m.Image.SaveImage(m.Pixels)
 }
 
 func (m *TMain) buildMandelAscii(arguments []int) {
+    //clone the mandel
     asciiMandelConfig := m.Mandel
+    //set width and height
     asciiMandelConfig.Width = uint16(arguments[0])
     asciiMandelConfig.Height = uint16(arguments[1])
+    //generate the mandel and then call PrintAscii function
     var pixels[][]float64 = asciiMandelConfig.GetMandel()
     slicetoimage.PrintAscii(pixels, asciiMandelConfig.Width, asciiMandelConfig.Height, asciiMandelConfig.MaxIterations)
 }
