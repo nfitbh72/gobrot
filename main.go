@@ -98,6 +98,7 @@ func (m *TMain) setLayers(arguments []string) {
     fmt.Println("layers set", m.Image.Layers)
 }
 
+//command to show the current configuration
 func (main *TMain) showConfig(arguments []string) {
     fmt.Println(main.Mandel)
     fmt.Println(main.Image)
