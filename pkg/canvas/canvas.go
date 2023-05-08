@@ -6,6 +6,7 @@ import (
 )
 
 type TCanvas struct {
+	CanvasMethodName string
 	MandelEffect float64
 	InPixels [][]float64
 	OutPixels [][]float64
@@ -33,17 +34,18 @@ func (canvas *TCanvas) Run(mWidth uint16, mHeight uint16, mMaxIterations uint16)
 			p := complex(i, canvas.getGeoPoint(y, mHeight))
 
 			//i and j are now between 0 and 1
-			//get the 0 to 1 value of the map and apply 1-MandelEffect to it
+			//get the 0 to 1 value of the map
+			//@TODO make this a reflect call based on canvas.CanvasMethodName
 			canvasZ := canvas.semiCylinder(p)
 
 			if (canvasZ < 0.0 || canvasZ > 1.0) {
 				fmt.Println(canvasZ, "out of range")
 			}
 
-			//get the mandel component of the end result
+			//get the mandel component of the end result - e.g. 20% MandelEffect
 			mandelZ := canvas.InPixels[y][x] * canvas.MandelEffect
 
-			//get the canvas component of the end result
+			//get the canvas component of the end result - e.g. 80% Canvas effect
 			canvasZ = canvasZ * (1.0 - canvas.MandelEffect)
 
 			//record the output of the 2 components
