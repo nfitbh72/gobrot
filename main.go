@@ -134,6 +134,7 @@ func main() {
     }
 
     //add the commands to the CLI
+    Main.CLI.AddCommand("fname", 1, 1, Main.setFilename, "Sets the basename of the file output")
     Main.CLI.AddCommand("height", 1, 1, Main.setHeight, "Sets the height in pixels of the output")
     Main.CLI.AddCommand("width", 1, 1, Main.setWidth, "Sets the width in pixels of the output")
     Main.CLI.AddCommand("iterations", 1, 1, Main.setMaxIterations, "Sets the maximum iterations of the mandelbrot algorithm")

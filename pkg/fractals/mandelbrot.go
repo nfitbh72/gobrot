@@ -61,6 +61,7 @@ func (mandel *TMandel) GetMandel() [][]float64 {
     return pixels
 }
 
+/*
 //the actual function that does the mandel algorithm
 //for a complex coordinate, determine how many iterations is required to escape the mandelbrot
 func (mandel *TMandel) mandelbrot(z complex128, maxIterations uint16) uint16 {
@@ -73,6 +74,7 @@ func (mandel *TMandel) mandelbrot(z complex128, maxIterations uint16) uint16 {
     }
     return maxIterations
 }
+*/
 
 //the actual function that does the mandel algorithm
 //for a complex coordinate, determine how many iterations is required to escape the mandelbrot

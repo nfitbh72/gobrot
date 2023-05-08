@@ -125,7 +125,8 @@ func (clinterface *TCLI) AddMultiLineCommand(firstLine string, lastLine string, 
 }
 
 func (clinterface *TCLI) exit(arguments []string) {
-	fmt.Println("Bye!\n")
+	fmt.Println("Bye!")
+	fmt.Println()
 	clinterface.Finish = true
 }
 

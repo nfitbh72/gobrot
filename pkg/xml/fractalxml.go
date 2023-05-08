@@ -39,9 +39,11 @@ type TImageSize struct {
 //parses the XML and returns a new TMandelbrotXMLSettings object
 func GetMandelBrotSettingsFromString(fractalXml string) TMandelbrotXMLSettings {
 	var mandelbrotXMLSettings TMandelbrotXMLSettings
-	xml.Unmarshal([]byte(fractalXml), &mandelbrotXMLSettings);
-	mandelbrotXMLSettings.FixAspectBug()
-	fmt.Println(mandelbrotXMLSettings)
+	error := xml.Unmarshal([]byte(fractalXml), &mandelbrotXMLSettings);
+	if (error != nil) {
+		mandelbrotXMLSettings.FixAspectBug()
+	}
+		fmt.Println(mandelbrotXMLSettings)
 	return mandelbrotXMLSettings
 }
 

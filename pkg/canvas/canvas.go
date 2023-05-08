@@ -15,9 +15,11 @@ func (canvas *TCanvas) getGeoPoint(n uint16, maxN uint16) float64 {
 	return float64(n) / float64(maxN)
 }
 
+/*
 func reverseGeoPoint(z float64, maxN uint16) uint16 {
 	return uint16(math.Floor(z * float64(maxN)))
 }
+*/
 
 func (canvas *TCanvas) Run(mWidth uint16, mHeight uint16, mMaxIterations uint16) {
 	canvas.OutPixels = make([][]float64, mHeight)
@@ -32,7 +34,7 @@ func (canvas *TCanvas) Run(mWidth uint16, mHeight uint16, mMaxIterations uint16)
 
 			//i and j are now between 0 and 1
 			//get the 0 to 1 value of the map and apply 1-MandelEffect to it
-			canvasZ := canvas.bowl(p)
+			canvasZ := canvas.semiCylinder(p)
 
 			if (canvasZ < 0.0 || canvasZ > 1.0) {
 				fmt.Println(canvasZ, "out of range")
@@ -50,6 +52,14 @@ func (canvas *TCanvas) Run(mWidth uint16, mHeight uint16, mMaxIterations uint16)
 	}
 }
 
+func (canvas *TCanvas) semiCylinder(p complex128) float64 {
+	//turn y into -1 to 1
+	y := imag(p) * 2.0 - 1.0
+	val := math.Sqrt(1.0 - (y*y))
+	return val
+}
+
+/*
 func (canvas *TCanvas) domeMap(p complex128) float64 {
     //x = (x - 0.5) * 2.0
     //y = (y - 0.5) * 2.0
@@ -71,12 +81,7 @@ func (canvas *TCanvas) testMap(p complex128) float64 {
     return val
 }
 
-func (canvas *TCanvas) semiCylinder(p complex128) float64 {
-	//turn y into -1 to 1
-	y := imag(p) * 2.0 - 1.0
-	val := math.Sqrt(1.0 - (y*y))
-	return val
-}
+
 
 func (canvas *TCanvas) bowl(p complex128) float64 {
 	//turn y into -1 to 1
@@ -85,3 +90,4 @@ func (canvas *TCanvas) bowl(p complex128) float64 {
 	val := (math.Sqrt(1.0 - (y*y)) + math.Sqrt(1.0 - (x * x))) / 2.0
 	return val
 }
+*/
