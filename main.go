@@ -2,18 +2,20 @@ package main
 
 import (
     "fmt"
-    "strconv"
+    //"strconv"
     "wilf/gobrot/pkg/fractals"
     "wilf/gobrot/pkg/images"
     "wilf/gobrot/pkg/xml"
     "wilf/gobrot/pkg/cli"
     "wilf/gobrot/pkg/canvas"
+    "wilf/gobrot/pkg/layers"
     //"math"
 )
 
 //keeping all the main data here
 type TMain struct {
     Mandel mandelbrot.TMandel
+    Layers layers.TLayers
     Image slicetoimage.TImage
     CLI cli.TCLI
     Pixels [][]float64
@@ -53,7 +55,8 @@ func (m *TMain) setFilename(arguments []string) {
 //actually generates the mandel and saves the image
 func (m *TMain) buildMandel(arguments []string) {
     m.Pixels = m.Mandel.GetMandel()
-    m.Image.SaveImage(m.Pixels)
+    m.Layers.ProcessLayers(m.Pixels)
+    m.Image.SaveImage(m.Layers.Layers)
 }
 
 func (m *TMain) buildMandelAscii(arguments []int) {
@@ -76,26 +79,24 @@ func (m *TMain) loadXml(xml string) {
     //delta := m.Mandel.Max - m.Mandel.Min
 }
 
-func (m *TMain) setLayers(arguments []string) {
+func (m *TMain) setLayers(arguments []float64) {
     if len(arguments) < 1 {
-        m.Image.Layers[0][0] = 0
-        m.Image.Layers[0][1] = 100
+        m.Layers.LayersConfig[0][0] = 0.0
+        m.Layers.LayersConfig[0][1] = 1.0
     } else {
-        m.Image.Layers[0][0] = 0
+        m.Layers.LayersConfig[0][0] = 0.0
         count := 0
-        for _, layer := range arguments {
-            fmt.Println(layer)
-            if intVal, err := strconv.ParseInt(layer,10,64); err == nil {
-                m.Image.Layers[count][1] = int(intVal)
-                m.Image.Layers[count+1][0] = int(intVal)
-                count++
-            } else {
-                fmt.Printf("Error:%v\n", err)
-            }
+        for _, layerValue := range arguments {
+            fmt.Println(layerValue)
+
+            m.Layers.LayersConfig[count][1] = layerValue
+            m.Layers.LayersConfig[count+1][0] = layerValue
+            count++
+            
         }
-        m.Image.Layers[count][1] = 100
+        m.Layers.LayersConfig[count][1] = 1.0
     }
-    fmt.Println("layers set", m.Image.Layers)
+    fmt.Println("layers set", m.Layers.LayersConfig)
 }
 
 //command to show the current configuration
@@ -117,7 +118,8 @@ func (main *TMain) canvas(arguments []string) {
         main.Canvas.CanvasMethodName = "test"
     }
     main.Canvas.Run(main.Mandel.Width, main.Mandel.Height, main.Mandel.MaxIterations)
-    main.Image.SaveImage(main.Canvas.OutPixels)
+    main.Layers.ProcessLayers(main.Canvas.OutPixels)
+    main.Image.SaveImage(main.Layers.Layers)
 }
 
 var Main TMain
@@ -132,9 +134,14 @@ func main() {
         MaxIterations: 2047,
     }
 
+    //default config for layers
+    Main.Layers = layers.TLayers {
+        LayersConfig: [][]float64{{0.0, 1.0}, {1.0, 1.0}, {1.0, 1.0}, {1.0, 1.0}},
+    }
+
     //default config for image output
     Main.Image = slicetoimage.TImage {
-        Layers: [][]int{{0, 100}, {100, 100}, {100, 100}, {100, 100}},
+        //Layers: [][]int{{0, 100}, {100, 100}, {100, 100}, {100, 100}},
         FilenameBase: "./out",
     }
 
