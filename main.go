@@ -9,6 +9,7 @@ import (
     "wilf/gobrot/pkg/cli"
     "wilf/gobrot/pkg/canvas"
     "wilf/gobrot/pkg/layers"
+    "wilf/gobrot/pkg/usage"
     //"math"
 )
 
@@ -20,6 +21,7 @@ type TMain struct {
     CLI cli.TCLI
     Pixels [][]float64
     Canvas canvas.TCanvas
+    Usage usage.TUsage
 }
 
 func (m *TMain) setHeight(arguments []int) {
@@ -122,6 +124,11 @@ func (main *TMain) canvas(arguments []string) {
     main.Image.SaveImage(main.Layers.Layers)
 }
 
+//command to report on memory usage
+func (main *TMain) usage(arguments[] string) {
+    main.Usage.PrintMemUsage()
+}
+
 var Main TMain
 
 func main() {
@@ -163,6 +170,7 @@ func main() {
     Main.CLI.AddCommand("layers", 1, 0, Main.setLayers, "If you want many pngs for different layers then specify percentages for which the layer breaks exist (do not include 0 or 100, these are assumed)")
     Main.CLI.AddCommand("ascii", 1, 2, Main.buildMandelAscii, "Displays an ascii version of the Mandelbrot - specify width and height")
     Main.CLI.AddCommand("canvas", 0, 1, Main.canvas, "Applies the fractal to a canvas")
+    Main.CLI.AddCommand("usage", 0, 0, Main.usage, "Reports on memory usage")
     Main.CLI.AddMultiLineCommand("<?xml version='1.0'?>", "</mandelbrot_settings_2>", Main.loadXml, "Imports XML from https://math.hws.edu/eck/js/mandelbrot/MB.html")
 
     //welcome message
