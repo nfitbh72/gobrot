@@ -114,7 +114,7 @@ func (main *TMain) canvas(arguments []string) {
     if (len(arguments) > 0) {
         main.Canvas.CanvasMethodName = arguments[0]
     } else {
-        main.Canvas.CanvasMethodName = "semiCylinder"
+        main.Canvas.CanvasMethodName = "test"
     }
     main.Canvas.Run(main.Mandel.Width, main.Mandel.Height, main.Mandel.MaxIterations)
     main.Image.SaveImage(main.Canvas.OutPixels)
