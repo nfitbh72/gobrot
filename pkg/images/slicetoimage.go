@@ -36,6 +36,10 @@ func PrintAscii(pixels [][]float64, width uint16, height uint16, maxIterations u
 }
 
 func (img *TImage) SaveImage(pixels [][]float64) {
+    if len(pixels) == 0 {
+        fmt.Println("No image data to save")
+        return
+    }
     var images []*image.Gray16 = img.GetImagesFromPixels(pixels)
     
     for n, i := range images {

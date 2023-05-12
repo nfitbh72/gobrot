@@ -50,15 +50,19 @@ func (m *TMain) setFilename(arguments []string) {
     m.Image.FilenameBase = arguments[0]
 }
 
+//actually generates the mandel and saves the image
 func (m *TMain) buildMandel(arguments []string) {
     m.Pixels = m.Mandel.GetMandel()
     m.Image.SaveImage(m.Pixels)
 }
 
 func (m *TMain) buildMandelAscii(arguments []int) {
+    //clone the mandel
     asciiMandelConfig := m.Mandel
+    //set width and height
     asciiMandelConfig.Width = uint16(arguments[0])
     asciiMandelConfig.Height = uint16(arguments[1])
+    //generate the mandel and then call PrintAscii function
     var pixels[][]float64 = asciiMandelConfig.GetMandel()
     slicetoimage.PrintAscii(pixels, asciiMandelConfig.Width, asciiMandelConfig.Height, asciiMandelConfig.MaxIterations)
 }
@@ -94,6 +98,7 @@ func (m *TMain) setLayers(arguments []string) {
     fmt.Println("layers set", m.Image.Layers)
 }
 
+//command to show the current configuration
 func (main *TMain) showConfig(arguments []string) {
     fmt.Println(main.Mandel)
     fmt.Println(main.Image)
@@ -101,9 +106,15 @@ func (main *TMain) showConfig(arguments []string) {
 
 //command to execute the canvas
 func (main *TMain) canvas(arguments []string) {
-     main.Canvas = canvas.TCanvas{
+    
+    main.Canvas = canvas.TCanvas{
         InPixels: main.Pixels,
         MandelEffect: 0.1,
+    }
+    if (len(arguments) > 0) {
+        main.Canvas.CanvasMethodName = arguments[0]
+    } else {
+        main.Canvas.CanvasMethodName = "test"
     }
     main.Canvas.Run(main.Mandel.Width, main.Mandel.Height, main.Mandel.MaxIterations)
     main.Image.SaveImage(main.Canvas.OutPixels)
@@ -144,7 +155,7 @@ func main() {
     Main.CLI.AddCommand("go", 0, 0, Main.buildMandel, "Runs the algorithm, outputs the png(s)")
     Main.CLI.AddCommand("layers", 1, 0, Main.setLayers, "If you want many pngs for different layers then specify percentages for which the layer breaks exist (do not include 0 or 100, these are assumed)")
     Main.CLI.AddCommand("ascii", 1, 2, Main.buildMandelAscii, "Displays an ascii version of the Mandelbrot - specify width and height")
-    Main.CLI.AddCommand("canvas", 0, 0, Main.canvas, "Applies the fractal to a canvas")
+    Main.CLI.AddCommand("canvas", 0, 1, Main.canvas, "Applies the fractal to a canvas")
     Main.CLI.AddMultiLineCommand("<?xml version='1.0'?>", "</mandelbrot_settings_2>", Main.loadXml, "Imports XML from https://math.hws.edu/eck/js/mandelbrot/MB.html")
 
     //welcome message
