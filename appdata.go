@@ -1,7 +1,6 @@
 package main
 
 import (
-    "fmt"
     "wilf/gobrot/pkg/fractals"
     "wilf/gobrot/pkg/images"
     "wilf/gobrot/pkg/canvas"
@@ -12,7 +11,7 @@ import (
 type TAppData struct {
     Mandel mandelbrot.TMandel
     Layers layers.TLayers
-    Image slicetoimage.TImage
+    Image images.TImage
     Pixels [][]float64
     Canvas canvas.TCanvas
 }
@@ -26,24 +25,18 @@ func getAppDataInstance() *TAppData {
         lock.Lock()
         defer lock.Unlock()
         if appDataInstance == nil {
-            fmt.Println("Creating single instance now.")
             appDataInstance = &TAppData{}
             appDataInstance.initialise()
-        } else {
-            fmt.Println("Single instance already created.")
         }
-    } else {
-        fmt.Println("Single instance already created.")
     }
-
     return appDataInstance
 }
 
 func (appData *TAppData) initialise() {
     //default config for mandelbrot
     appData.Mandel = mandelbrot.TMandel {
-        Width: uint16(8161),
-        Height: 8161,
+        Width: uint16(2048),
+        Height: 2048,
         Min: -2.0 - 1.25i,
         Max: 0.5 + 1.25i,
         MaxIterations: 2047,
@@ -55,7 +48,8 @@ func (appData *TAppData) initialise() {
     }
 
     //default config for image output
-    appData.Image = slicetoimage.TImage {
+    appData.Image = images.TImage {
         FilenameBase: "./out",
+        ColourProfileString: "cycle",
     }
 }

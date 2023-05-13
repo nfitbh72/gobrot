@@ -2,7 +2,6 @@ package main
 
 import (
     "fmt"
-    "wilf/gobrot/pkg/images"
     "wilf/gobrot/pkg/xml"
     "wilf/gobrot/pkg/cli"
     "wilf/gobrot/pkg/canvas"
@@ -88,7 +87,7 @@ func (m *TCommands) buildMandelAscii(arguments []int) {
     asciiMandelConfig.Height = uint16(arguments[1])
     //generate the mandel and then call PrintAscii function
     var pixels[][]float64 = asciiMandelConfig.GetMandel()
-    slicetoimage.PrintAscii(pixels, asciiMandelConfig.Width, asciiMandelConfig.Height, asciiMandelConfig.MaxIterations)
+    m.AppData.Image.PrintAscii(pixels, asciiMandelConfig.Width, asciiMandelConfig.Height, asciiMandelConfig.MaxIterations)
 }
 
 func (m *TCommands) loadXml(xml string) {
