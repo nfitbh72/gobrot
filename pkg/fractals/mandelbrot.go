@@ -55,7 +55,6 @@ func (mandel *TMandel) GetMandel() [][]float64 {
     fmt.Println("waiting for", mandel.Width, "threads")
     //wait for all threads to finish
     wg.Wait();
-    fmt.Println("done")
     now := time.Now().UnixMilli()
     fmt.Println("it took", now - then, "milliseconds")
     return pixels
