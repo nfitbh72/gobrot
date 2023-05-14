@@ -41,7 +41,7 @@ func GetMandelBrotSettingsFromString(fractalXml string) TMandelbrotXMLSettings {
 	var mandelbrotXMLSettings TMandelbrotXMLSettings
 	error := xml.Unmarshal([]byte(fractalXml), &mandelbrotXMLSettings);
 	if (error == nil) {
-		mandelbrotXMLSettings.FixAspectBug()
+		//mandelbrotXMLSettings.FixAspectBug()
 	} else {
 		fmt.Println(error)
 	}

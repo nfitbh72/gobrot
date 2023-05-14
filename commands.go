@@ -35,6 +35,10 @@ func (m *TCommands) initialise(appData *TAppData) {
     m.CLI.AddCommand("ascii", 1, 2, m.buildMandelAscii, "Displays an ascii version of the Mandelbrot - specify width and height")
     m.CLI.AddCommand("canvas", 0, 1, m.canvas, "Applies the fractal to a canvas")
     m.CLI.AddCommand("usage", 0, 0, m.usage, "Reports on memory usage")
+    m.CLI.AddCommand("cp", 1, 1, m.setColourProfile, "Sets the colour profile to use")
+    m.CLI.AddCommand("shadow", 1, 1, m.setShadow, "Sets whether shadows are used with on / off argument")
+    m.CLI.AddCommand("stretch", 1, 1, m.setStretch, "Sets whether to force the range of colours to be 0 -> 65536")
+    m.CLI.AddCommand("img", 0, 0, m.buildImageOnly, "Builds in image again from existing data")
     m.CLI.AddMultiLineCommand("<?xml version='1.0'?>", "</mandelbrot_settings_2>", m.loadXml, "Imports XML from https://math.hws.edu/eck/js/mandelbrot/MB.html")
 }
 
@@ -75,8 +79,21 @@ func (m *TCommands) setFilename(arguments []string) {
 //actually generates the mandel and saves the image
 func (m *TCommands) buildMandel(arguments []string) {
     m.AppData.Pixels = m.AppData.Mandel.GetMandel()
-    m.AppData.Layers.ProcessLayers(m.AppData.Pixels)
-    m.AppData.Image.SaveImage(m.AppData.Layers.Layers)
+    m.AppData.Layers.ProcessLayers(m.AppData.Pixels, false)
+    if (m.AppData.IsShadowGenerated) {
+        m.AppData.Mandel.AdjustForShadowMandel()
+        m.AppData.ShadowPixels = m.AppData.Mandel.GetMandel()
+        m.AppData.Layers.ProcessLayers(m.AppData.ShadowPixels, true)
+    }
+    m.AppData.Image.SaveImage(
+        m.AppData.Layers.Layers, m.AppData.Layers.ShadowLayers, m.AppData.IsShadowGenerated, m.AppData.StretchValues,
+    )
+}
+
+func (m *TCommands) buildImageOnly(arguments[] string) {
+    m.AppData.Image.SaveImage(
+        m.AppData.Layers.Layers, m.AppData.Layers.ShadowLayers, m.AppData.IsShadowGenerated, m.AppData.StretchValues,
+    )
 }
 
 func (m *TCommands) buildMandelAscii(arguments []int) {
@@ -124,6 +141,8 @@ func (m *TCommands) showConfig(arguments []string) {
     fmt.Println(m.AppData.Mandel)
     fmt.Println(m.AppData.Layers.LayersConfig)
     fmt.Println(m.AppData.Image)
+    fmt.Println("ColourProfileString", m.AppData.Image.ColourProfileString)
+    fmt.Println("IsShadowGenerated", m.AppData.IsShadowGenerated, "StretchValues", m.AppData.StretchValues)
 }
 
 //command to execute the canvas
@@ -139,11 +158,29 @@ func (m *TCommands) canvas(arguments []string) {
         m.AppData.Canvas.CanvasMethodName = "test"
     }
     m.AppData.Canvas.Run(m.AppData.Mandel.Width, m.AppData.Mandel.Height, m.AppData.Mandel.MaxIterations)
-    m.AppData.Layers.ProcessLayers(m.AppData.Canvas.OutPixels)
-    m.AppData.Image.SaveImage(m.AppData.Layers.Layers)
+    //var shadowPixels = [][][]float64
+    m.AppData.Layers.ProcessLayers(m.AppData.Canvas.OutPixels, false)
+    m.AppData.Image.SaveImage(
+        m.AppData.Layers.Layers, m.AppData.Layers.ShadowLayers, m.AppData.IsShadowGenerated, m.AppData.StretchValues,
+    )
 }
 
 //command to report on memory usage
 func (m *TCommands) usage(arguments[] string) {
     m.Usage.PrintMemUsage()
+}
+
+func (m *TCommands) setColourProfile(arguments[] string) {
+    m.AppData.Image.ColourProfileString = arguments[0]
+    fmt.Println("ColourProfileString set to", m.AppData.Image.ColourProfileString)
+}
+
+func (m *TCommands) setShadow(arguments[] string) {
+    m.AppData.IsShadowGenerated = (arguments[0] == "on")
+    fmt.Println("IsShadowGenerated", m.AppData.IsShadowGenerated)
+}
+
+func (m *TCommands) setStretch(arguments[] string) {
+    m.AppData.StretchValues = (arguments[0] == "on")
+    fmt.Println("StretchValues", m.AppData.StretchValues)
 }

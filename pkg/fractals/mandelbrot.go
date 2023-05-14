@@ -21,6 +21,13 @@ func (mandel *TMandel) getCoord(pixel int, maxPixel uint16, minCoord float64, ma
     return float64(pixel) / float64(maxPixel) * (maxCoord - minCoord) + minCoord
 }
 
+func (mandel *TMandel) AdjustForShadowMandel() {
+    adjustment := (mandel.Max - mandel.Min) / complex(float64(mandel.Width) * 2.0, float64(mandel.Height) * 2.0)
+    mandel.Min = mandel.Min + adjustment
+    mandel.Max = mandel.Max + adjustment
+    fmt.Println("Adjustment", adjustment)
+}
+
 //gets a 2 dimensional float64 slice of the mandelbrot
 func (mandel *TMandel) GetMandel() [][]float64 {
     then := time.Now().UnixMilli()
@@ -28,6 +35,7 @@ func (mandel *TMandel) GetMandel() [][]float64 {
     for i := range pixels {
         pixels[i] = make([]float64, mandel.Height)
     }
+    //a useful calculation to have before looping
     heightPerIteration := 1.0 / float64(mandel.MaxIterations)
 
     var wg sync.WaitGroup

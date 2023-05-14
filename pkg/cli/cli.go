@@ -191,7 +191,7 @@ func (clinterface *TCLI) Run() {
 							if (len(line) > commandLen) {
 								stringArgs := strings.Split(line[commandLen+1:], " ")
 								for _, stringArg := range stringArgs {
-									i, err := strconv.ParseInt(stringArg, 10, 16)
+									i, err := strconv.ParseInt(stringArg, 10, 64)
 									if err == nil {
 										args = append(args, int(i))
 									} else {
