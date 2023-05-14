@@ -24,7 +24,7 @@ func (m TGreyscale) Initialise(filename string, width int, height int) IColourPr
     return m
 }
 
-func (m TGreyscale) SetPixel(i int, j int, depth uint16) {
+func (m TGreyscale) SetPixel(i int, j int, depth uint16, isShadow bool, shadowDepth uint16) {
     m.Image.SetGray16(
         i,
         j,

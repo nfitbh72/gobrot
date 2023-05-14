@@ -6,6 +6,6 @@ import (
 
 type IColourProfile interface {
 	Initialise(filename string, width int, height int) IColourProfile
-	SetPixel(i int, j int, depth uint16)
+	SetPixel(i int, j int, depth uint16, isShadow bool, shadowDepth uint16)
 	SaveImage(file *os.File)
 }

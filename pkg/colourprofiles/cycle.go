@@ -24,11 +24,34 @@ func (m TCycle) Initialise(filename string, width int, height int) IColourProfil
     return m
 }
 
-func (m TCycle) SetPixel(i int, j int, depth uint16) {
+func (m TCycle) BrightenValue (value uint8, percent float64) uint8 {
+    newValue := int(float64(value) * percent)
+    if (newValue > 255) {
+        return uint8(255)
+    }
+    return uint8(newValue)
+}
+
+
+func (m TCycle) SetPixel(i int, j int, depth uint16, isShadow bool, shadowDepth uint16) {
+    c := color.RGBA{uint8(depth % 256), uint8((depth / 16) % 256), uint8((depth / 256) % 256), uint8(225)}
+
+    if (isShadow) {
+        if (shadowDepth < depth) {
+            c.A = m.BrightenValue(c.A, 1.1)
+        }
+        if (shadowDepth > depth) {
+            c.A = m.BrightenValue(c.A, 0.75)
+        }
+        //c.A = m.BrightenValue(c.A, 1.5*float64(shadowDepth - depth)/float64(65536))
+    } else {
+        c.A = uint8(255)
+    }
+
     m.Image.Set(
         i,
         j,
-        color.RGBA{uint8(depth % 256), uint8((depth / 16) % 256), uint8((depth / 256) % 256), uint8(255)},
+        c,
     )
 }
 
