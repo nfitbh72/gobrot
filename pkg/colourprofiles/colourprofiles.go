@@ -10,6 +10,7 @@ type IColourProfile interface {
 	SaveImage(file *os.File)
 }
 
+//helper functions
 func percentToUint(percent float64) uint16 {
 	return uint16(65535) - uint16(percent * 65535.0)
 }

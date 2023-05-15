@@ -7,6 +7,7 @@ import (
     "os"
     "fmt"
     "strconv"
+    "os/exec"
     "wilf/gobrot/pkg/colourprofiles"
 )
 
@@ -40,6 +41,8 @@ func (m *TImage) Initialise() {
 
     gray := colourprofiles.TGreyscale{}
     m.ColourProfileMap["gray"] = &gray
+    gray2 := colourprofiles.TGreyscale2{}
+    m.ColourProfileMap["gray2"] = &gray2
     cycle := colourprofiles.TCycle{}
     m.ColourProfileMap["cycle"] = &cycle
     gpt1 := colourprofiles.TGPT1{}
@@ -89,6 +92,12 @@ func (m *TImage) SaveImage(layers [][][]float64, shadowLayers[][][]float64, isSh
         image.SaveImage(out)
 
         defer out.Close()
+        
+        //for now, just lauch the app, would like this to spawn rather than block
+        cmd := exec.Command(`C:\Program Files\IrfanView\i_view64.exe`, filename[2:len(filename)])
+        if err := cmd.Run(); err != nil {
+            fmt.Println("Error:", err)
+        }
     }
 }
 

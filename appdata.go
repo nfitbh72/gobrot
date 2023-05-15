@@ -56,13 +56,13 @@ func (appData *TAppData) initialise() {
         FilenameBase: "./out",
     }
     appData.Image.Initialise()
-    defaultColourProfileString := "cycle"
+    defaultColourProfileString := "gray2"
     if appData.Image.SetColourProfile(defaultColourProfileString) {
         appData.ColourProfileString = defaultColourProfileString
     }
 
     //whether to create the shadow mandel plot
-    appData.IsShadowGenerated = true
+    appData.IsShadowGenerated = false
 
     //whether to stretch the values to 0 -> 65536
     appData.StretchValues = true
