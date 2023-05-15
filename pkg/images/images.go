@@ -107,7 +107,14 @@ func (m *TImage) GetMinMax(layers[][][] float64) (float64, float64) {
     return minVal, maxVal
 }
 
-func (m *TImage) GetImageFromLayer(layer [][]float64, shadowLayer [][]float64, isShadow bool, minVal float64, maxVal float64, stretchValues bool) colourprofiles.IColourProfile {
+func stretchValue(depth float64, minVal float64, maxVal float64) float64 {
+    return (depth - minVal) / (maxVal - minVal)
+}
+
+func (m *TImage) GetImageFromLayer(
+    layer [][]float64, shadowLayer [][]float64, isShadow bool, minVal float64, maxVal float64, stretchValues bool,
+) colourprofiles.IColourProfile {
+
     width := len(layer)
     height := len(layer[0])
 
@@ -115,10 +122,9 @@ func (m *TImage) GetImageFromLayer(layer [][]float64, shadowLayer [][]float64, i
     
     var img colourprofiles.IColourProfile
 
-    minC := uint16(65535)
-    maxC := uint16(0)
+    minC := float64(1.0)
+    maxC := float64(0.1)
     if len(layer) > 0 {
-        
 
         img = m.ColourProfile
 
@@ -127,27 +133,28 @@ func (m *TImage) GetImageFromLayer(layer [][]float64, shadowLayer [][]float64, i
         for i:= 0; i < width; i++ {
             for j := 0; j < height; j++ {
 
-                colPercent := layer[i][j]
+                depth := layer[i][j]
 
+                //stretch values ensures that depth uses all of 0.0 to 1.0
                 if (stretchValues) {
-                    colPercent = (colPercent - minVal) / (maxVal - minVal) 
+                    depth = stretchValue(depth, minVal, maxVal) 
                 }
-                //force to 65535 -> 0 range
-                col:= uint16(65535) - uint16(colPercent * 65535.0)
 
-                shadowCol := uint16(0)
+                shadowDepth := float64(0)
                 if (isShadow) {
-                    shadowColPercent := shadowLayer[i][j]
-                    shadowCol = uint16(65535) - uint16(shadowColPercent * 65535.0)
+                    shadowDepth := shadowLayer[i][j]
+                    //stretch values ensures that depth uses all of 0.0 to 1.0
+                    if (stretchValues) {
+                        shadowDepth = stretchValue(shadowDepth, minVal, maxVal)
+                    }
                 }
-                
 
-                if (col < minC) { minC = col }
-                if (col > maxC) { maxC = col }
-                img.SetPixel(i, height - j, col, isShadow, shadowCol)
+                if (depth < minC) { minC = depth }
+                if (depth > maxC) { maxC = depth }
+                img.SetPixel(i, height - j, depth, isShadow, shadowDepth)
             }
         }
-        fmt.Println("MinCol: ",minC, "; MaxCol: ", maxC)
+        fmt.Println("MinDepth: ",minC, "; MaxDepth: ", maxC)
     }
         
     return img

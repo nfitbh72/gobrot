@@ -23,11 +23,13 @@ func (m *TGreyscale) Initialise(filename string, width int, height int) {
     m.Image = image.NewGray16(image.Rect(0, 0, width, height))
 }
 
-func (m *TGreyscale) SetPixel(i int, j int, depth uint16, isShadow bool, shadowDepth uint16) {
+func (m *TGreyscale) SetPixel(i int, j int, depth float64, isShadow bool, shadowDepth float64) {
+    depthColour := percentToUint(depth)
+    //shadowDepthColour := percentToUint(shadowDepth)
     m.Image.SetGray16(
         i,
         j,
-        color.Gray16{depth},
+        color.Gray16{depthColour},
     )
 }
 
