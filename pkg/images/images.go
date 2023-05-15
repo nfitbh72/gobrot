@@ -12,7 +12,8 @@ import (
 
 type TImage struct {
     FilenameBase string
-    ColourProfileString string
+    ColourProfile colourprofiles.IColourProfile
+    ColourProfileMap map[string]colourprofiles.IColourProfile
 }
 
 func (image *TImage) PrintAscii(pixels [][]float64, width uint16, height uint16, maxIterations uint16) {
@@ -34,7 +35,35 @@ func (image *TImage) PrintAscii(pixels [][]float64, width uint16, height uint16,
 	}
 }
 
+func (m *TImage) Initialise() {
+    m.ColourProfileMap = make(map[string]colourprofiles.IColourProfile)
+
+    gray := colourprofiles.TGreyscale{}
+    m.ColourProfileMap["gray"] = &gray
+    cycle := colourprofiles.TCycle{}
+    m.ColourProfileMap["cycle"] = &cycle
+    gpt1 := colourprofiles.TGPT1{}
+    m.ColourProfileMap["gpt1"] = &gpt1
+    m.ColourProfile = m.ColourProfileMap["cycle"]
+}
+
+func (m *TImage) SetColourProfile(colourProfileString string) bool {
+    if len(m.ColourProfileMap) == 0 {
+        m.Initialise()
+    }
+    if cp, ok := m.ColourProfileMap[colourProfileString]; ok {
+        m.ColourProfile = cp
+        return true
+    } else {
+        fmt.Println("Unable to assign colour profile", colourProfileString)
+    }
+    return false
+}
+
 func (m *TImage) SaveImage(layers [][][]float64, shadowLayers[][][]float64, isShadow bool, stretchValues bool) {
+    if len(m.ColourProfileMap) == 0 {
+        m.Initialise()
+    }
     if len(layers) == 0 {
         fmt.Println("No image data to save")
         return
@@ -90,15 +119,10 @@ func (m *TImage) GetImageFromLayer(layer [][]float64, shadowLayer [][]float64, i
     maxC := uint16(0)
     if len(layer) > 0 {
         
-        if m.ColourProfileString == "gray" {
-            img = colourprofiles.TGreyscale{}
-        } else if m.ColourProfileString == "cycle" {
-            img = colourprofiles.TCycle{}
-        } else if m.ColourProfileString == "gpt1" {
-            img = colourprofiles.TGPT1{}
-        }
 
-        img = img.Initialise(m.FilenameBase, width, height)
+        img = m.ColourProfile
+
+        img.Initialise(m.FilenameBase, width, height)
         
         for i:= 0; i < width; i++ {
             for j := 0; j < height; j++ {

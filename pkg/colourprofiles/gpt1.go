@@ -19,7 +19,7 @@ type TGPT1 struct {
 	MaxValue uint16
 }
 
-func (m TGPT1) Initialise(filename string, width int, height int) IColourProfile {
+func (m *TGPT1) Initialise(filename string, width int, height int) {
     m.Filename = filename
     m.Width = width
     m.Height = height
@@ -32,7 +32,6 @@ func (m TGPT1) Initialise(filename string, width int, height int) IColourProfile
 
 	// Generate the color map
 	m.ColourMap = m.createColorMap(m.MinValue, m.MaxValue, minColor, maxColor)
-    return m
 }
 func (m TGPT1) createColorMap(minValue, maxValue uint16, minColor, maxColor color.RGBA) []color.RGBA {
 	colorMap := make([]color.RGBA, maxValue-minValue)
@@ -54,7 +53,7 @@ func (m TGPT1) createColorMap(minValue, maxValue uint16, minColor, maxColor colo
 }
 
 
-func (m TGPT1) SetPixel(i int, j int, depth uint16, isShadow bool, shadowDepth uint16) {
+func (m *TGPT1) SetPixel(i int, j int, depth uint16, isShadow bool, shadowDepth uint16) {
 	
 	// Convert the value to a range between 0 and 1
 	normalizedValue := float64(depth) / float64(65535)

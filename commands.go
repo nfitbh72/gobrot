@@ -141,7 +141,7 @@ func (m *TCommands) showConfig(arguments []string) {
     fmt.Println(m.AppData.Mandel)
     fmt.Println(m.AppData.Layers.LayersConfig)
     fmt.Println(m.AppData.Image)
-    fmt.Println("ColourProfileString", m.AppData.Image.ColourProfileString)
+    fmt.Println("ColourProfileString", m.AppData.ColourProfileString)
     fmt.Println("IsShadowGenerated", m.AppData.IsShadowGenerated, "StretchValues", m.AppData.StretchValues)
 }
 
@@ -171,8 +171,12 @@ func (m *TCommands) usage(arguments[] string) {
 }
 
 func (m *TCommands) setColourProfile(arguments[] string) {
-    m.AppData.Image.ColourProfileString = arguments[0]
-    fmt.Println("ColourProfileString set to", m.AppData.Image.ColourProfileString)
+    
+    if m.AppData.Image.SetColourProfile(arguments[0]) {
+        m.AppData.ColourProfileString = arguments[0] //keeping this just to report on it - probably a better way
+        fmt.Println("ColourProfileString set to", m.AppData.ColourProfileString)
+    }
+    
 }
 
 func (m *TCommands) setShadow(arguments[] string) {

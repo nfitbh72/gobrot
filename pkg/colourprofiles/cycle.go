@@ -16,12 +16,11 @@ type TCycle struct {
 	Image *image.RGBA
 }
 
-func (m TCycle) Initialise(filename string, width int, height int) IColourProfile {
+func (m *TCycle) Initialise(filename string, width int, height int) {
     m.Filename = filename
     m.Width = width
     m.Height = height
     m.Image = image.NewRGBA(image.Rect(0, 0, width, height))
-    return m
 }
 
 func (m TCycle) BrightenValue (value uint8, percent float64) uint8 {
@@ -33,7 +32,7 @@ func (m TCycle) BrightenValue (value uint8, percent float64) uint8 {
 }
 
 
-func (m TCycle) SetPixel(i int, j int, depth uint16, isShadow bool, shadowDepth uint16) {
+func (m *TCycle) SetPixel(i int, j int, depth uint16, isShadow bool, shadowDepth uint16) {
     c := color.RGBA{uint8(depth % 256), uint8((depth / 16) % 256), uint8((depth / 256) % 256), uint8(225)}
 
     if (isShadow) {
