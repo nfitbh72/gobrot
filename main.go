@@ -12,6 +12,8 @@ type TMain struct {
 var Main TMain
 
 func main() {
+
+    //testThis()
     //get the app data
     Main.AppData = getAppDataInstance()
 

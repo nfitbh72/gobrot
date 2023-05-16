@@ -7,12 +7,14 @@ import (
     "os"
     "fmt"
     "strconv"
+    "os/exec"
     "wilf/gobrot/pkg/colourprofiles"
 )
 
 type TImage struct {
     FilenameBase string
-    ColourProfileString string
+    ColourProfile colourprofiles.IColourProfile
+    ColourProfileMap map[string]colourprofiles.IColourProfile
 }
 
 func (image *TImage) PrintAscii(pixels [][]float64, width uint16, height uint16, maxIterations uint16) {
@@ -34,7 +36,37 @@ func (image *TImage) PrintAscii(pixels [][]float64, width uint16, height uint16,
 	}
 }
 
+func (m *TImage) Initialise() {
+    m.ColourProfileMap = make(map[string]colourprofiles.IColourProfile)
+
+    gray := colourprofiles.TGreyscale{}
+    m.ColourProfileMap["gray"] = &gray
+    gray2 := colourprofiles.TGreyscale2{}
+    m.ColourProfileMap["gray2"] = &gray2
+    cycle := colourprofiles.TCycle{}
+    m.ColourProfileMap["cycle"] = &cycle
+    gpt1 := colourprofiles.TGPT1{}
+    m.ColourProfileMap["gpt1"] = &gpt1
+    m.ColourProfile = m.ColourProfileMap["cycle"]
+}
+
+func (m *TImage) SetColourProfile(colourProfileString string) bool {
+    if len(m.ColourProfileMap) == 0 {
+        m.Initialise()
+    }
+    if cp, ok := m.ColourProfileMap[colourProfileString]; ok {
+        m.ColourProfile = cp
+        return true
+    } else {
+        fmt.Println("Unable to assign colour profile", colourProfileString)
+    }
+    return false
+}
+
 func (m *TImage) SaveImage(layers [][][]float64, shadowLayers[][][]float64, isShadow bool, stretchValues bool) {
+    if len(m.ColourProfileMap) == 0 {
+        m.Initialise()
+    }
     if len(layers) == 0 {
         fmt.Println("No image data to save")
         return
@@ -60,6 +92,12 @@ func (m *TImage) SaveImage(layers [][][]float64, shadowLayers[][][]float64, isSh
         image.SaveImage(out)
 
         defer out.Close()
+        
+        //for now, just lauch the app, would like this to spawn rather than block
+        cmd := exec.Command(`C:\Program Files\IrfanView\i_view64.exe`, filename[2:len(filename)])
+        if err := cmd.Run(); err != nil {
+            fmt.Println("Error:", err)
+        }
     }
 }
 
@@ -78,7 +116,14 @@ func (m *TImage) GetMinMax(layers[][][] float64) (float64, float64) {
     return minVal, maxVal
 }
 
-func (m *TImage) GetImageFromLayer(layer [][]float64, shadowLayer [][]float64, isShadow bool, minVal float64, maxVal float64, stretchValues bool) colourprofiles.IColourProfile {
+func stretchValue(depth float64, minVal float64, maxVal float64) float64 {
+    return (depth - minVal) / (maxVal - minVal)
+}
+
+func (m *TImage) GetImageFromLayer(
+    layer [][]float64, shadowLayer [][]float64, isShadow bool, minVal float64, maxVal float64, stretchValues bool,
+) colourprofiles.IColourProfile {
+
     width := len(layer)
     height := len(layer[0])
 
@@ -86,44 +131,39 @@ func (m *TImage) GetImageFromLayer(layer [][]float64, shadowLayer [][]float64, i
     
     var img colourprofiles.IColourProfile
 
-    minC := uint16(65535)
-    maxC := uint16(0)
+    minC := float64(1.0)
+    maxC := float64(0.1)
     if len(layer) > 0 {
-        
-        if m.ColourProfileString == "gray" {
-            img = colourprofiles.TGreyscale{}
-        } else if m.ColourProfileString == "cycle" {
-            img = colourprofiles.TCycle{}
-        } else if m.ColourProfileString == "gpt1" {
-            img = colourprofiles.TGPT1{}
-        }
 
-        img = img.Initialise(m.FilenameBase, width, height)
+        img = m.ColourProfile
+
+        img.Initialise(m.FilenameBase, width, height)
         
         for i:= 0; i < width; i++ {
             for j := 0; j < height; j++ {
 
-                colPercent := layer[i][j]
+                depth := layer[i][j]
 
+                //stretch values ensures that depth uses all of 0.0 to 1.0
                 if (stretchValues) {
-                    colPercent = (colPercent - minVal) / (maxVal - minVal) 
+                    depth = stretchValue(depth, minVal, maxVal) 
                 }
-                //force to 65535 -> 0 range
-                col:= uint16(65535) - uint16(colPercent * 65535.0)
 
-                shadowCol := uint16(0)
+                shadowDepth := float64(0)
                 if (isShadow) {
-                    shadowColPercent := shadowLayer[i][j]
-                    shadowCol = uint16(65535) - uint16(shadowColPercent * 65535.0)
+                    shadowDepth := shadowLayer[i][j]
+                    //stretch values ensures that depth uses all of 0.0 to 1.0
+                    if (stretchValues) {
+                        shadowDepth = stretchValue(shadowDepth, minVal, maxVal)
+                    }
                 }
-                
 
-                if (col < minC) { minC = col }
-                if (col > maxC) { maxC = col }
-                img.SetPixel(i, height - j, col, isShadow, shadowCol)
+                if (depth < minC) { minC = depth }
+                if (depth > maxC) { maxC = depth }
+                img.SetPixel(i, height - j, depth, isShadow, shadowDepth)
             }
         }
-        fmt.Println("MinCol: ",minC, "; MaxCol: ", maxC)
+        fmt.Println("MinDepth: ",minC, "; MaxDepth: ", maxC)
     }
         
     return img

@@ -19,7 +19,7 @@ type TGPT1 struct {
 	MaxValue uint16
 }
 
-func (m TGPT1) Initialise(filename string, width int, height int) IColourProfile {
+func (m *TGPT1) Initialise(filename string, width int, height int) {
     m.Filename = filename
     m.Width = width
     m.Height = height
@@ -32,7 +32,6 @@ func (m TGPT1) Initialise(filename string, width int, height int) IColourProfile
 
 	// Generate the color map
 	m.ColourMap = m.createColorMap(m.MinValue, m.MaxValue, minColor, maxColor)
-    return m
 }
 func (m TGPT1) createColorMap(minValue, maxValue uint16, minColor, maxColor color.RGBA) []color.RGBA {
 	colorMap := make([]color.RGBA, maxValue-minValue)
@@ -54,10 +53,12 @@ func (m TGPT1) createColorMap(minValue, maxValue uint16, minColor, maxColor colo
 }
 
 
-func (m TGPT1) SetPixel(i int, j int, depth uint16, isShadow bool, shadowDepth uint16) {
-	
+func (m *TGPT1) SetPixel(i int, j int, depth float64, isShadow bool, shadowDepth float64) {
+	depthColour := percentToUint(depth)
+    //shadowDepthColour := percentToUint(shadowDepth)
+
 	// Convert the value to a range between 0 and 1
-	normalizedValue := float64(depth) / float64(65535)
+	normalizedValue := float64(depthColour) / float64(65535)
 
 	// Apply sinusoidal transformations to create psychedelic effects
 	hue := math.Mod(normalizedValue+0.7, 1.0) // Shift the hue
@@ -66,11 +67,11 @@ func (m TGPT1) SetPixel(i int, j int, depth uint16, isShadow bool, shadowDepth u
 
 	//fmt.Println(shadowDepth)
 	if (isShadow) {
-		if (shadowDepth < depth) {
+		if (shadowDepth > depth) {
 			//fmt.Print("<")
 			value = 0.5
 		}
-		if (shadowDepth > depth) {
+		if (shadowDepth < depth) {
 			//fmt.Print(">")
 			value = 1.0
 		}

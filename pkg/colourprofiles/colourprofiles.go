@@ -5,7 +5,12 @@ import (
 )
 
 type IColourProfile interface {
-	Initialise(filename string, width int, height int) IColourProfile
-	SetPixel(i int, j int, depth uint16, isShadow bool, shadowDepth uint16)
+	Initialise(filename string, width int, height int)
+	SetPixel(i int, j int, depth float64, isShadow bool, shadowDepth float64)
 	SaveImage(file *os.File)
+}
+
+//helper functions
+func percentToUint(percent float64) uint16 {
+	return uint16(65535) - uint16(percent * 65535.0)
 }

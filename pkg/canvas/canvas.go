@@ -66,7 +66,6 @@ func (canvas *TCanvas) Run(mWidth uint16, mHeight uint16, mMaxIterations uint16)
 
 			//i and j are now between 0 and 1
 			//get the 0 to 1 value of the map
-			//@TODO make this a reflect call based on canvas.CanvasMethodName
 			canvasZ := canvasMethod(p)
 
 			if (canvasZ < 0.0 || canvasZ > 1.0) {

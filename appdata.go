@@ -17,6 +17,7 @@ type TAppData struct {
     Canvas canvas.TCanvas
     IsShadowGenerated bool
     StretchValues bool
+    ColourProfileString string
 }
 
 var lock = &sync.Mutex{}
@@ -53,11 +54,15 @@ func (appData *TAppData) initialise() {
     //default config for image output
     appData.Image = images.TImage {
         FilenameBase: "./out",
-        ColourProfileString: "cycle",
+    }
+    appData.Image.Initialise()
+    defaultColourProfileString := "gray2"
+    if appData.Image.SetColourProfile(defaultColourProfileString) {
+        appData.ColourProfileString = defaultColourProfileString
     }
 
     //whether to create the shadow mandel plot
-    appData.IsShadowGenerated = true
+    appData.IsShadowGenerated = false
 
     //whether to stretch the values to 0 -> 65536
     appData.StretchValues = true

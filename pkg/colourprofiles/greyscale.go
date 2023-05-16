@@ -16,19 +16,20 @@ type TGreyscale struct {
 	Image *image.Gray16
 }
 
-func (m TGreyscale) Initialise(filename string, width int, height int) IColourProfile {
+func (m *TGreyscale) Initialise(filename string, width int, height int) {
     m.Filename = filename
     m.Width = width
     m.Height = height
     m.Image = image.NewGray16(image.Rect(0, 0, width, height))
-    return m
 }
 
-func (m TGreyscale) SetPixel(i int, j int, depth uint16, isShadow bool, shadowDepth uint16) {
+func (m *TGreyscale) SetPixel(i int, j int, depth float64, isShadow bool, shadowDepth float64) {
+    depthColour := percentToUint(depth)
+    //shadowDepthColour := percentToUint(shadowDepth)
     m.Image.SetGray16(
         i,
         j,
-        color.Gray16{depth},
+        color.Gray16{depthColour},
     )
 }
 

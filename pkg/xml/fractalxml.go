@@ -41,6 +41,7 @@ func GetMandelBrotSettingsFromString(fractalXml string) TMandelbrotXMLSettings {
 	var mandelbrotXMLSettings TMandelbrotXMLSettings
 	error := xml.Unmarshal([]byte(fractalXml), &mandelbrotXMLSettings);
 	if (error == nil) {
+		//@TODO uncomment when fixed the below TODO
 		//mandelbrotXMLSettings.FixAspectBug()
 	} else {
 		fmt.Println(error)
@@ -71,6 +72,7 @@ func (settings *TMandelbrotXMLSettings) FixAspectBug() {
 	diff := deltaX - deltaY
 	minY := imag(min) - diff / 2.0
 	maxY := imag(max) + diff / 2.0
+	//@TODO turning it back into a string using sprintf is bad - very small floating point numbers get rounded this way
 	settings.Coords.YMin = fmt.Sprintf("%e", minY)
 	settings.Coords.YMax = fmt.Sprintf("%e", maxY)
 }
