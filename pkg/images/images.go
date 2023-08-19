@@ -15,6 +15,7 @@ type TImage struct {
     FilenameBase string
     ColourProfile colourprofiles.IColourProfile
     ColourProfileMap map[string]colourprofiles.IColourProfile
+    ShowPreview bool
 }
 
 func (image *TImage) PrintAscii(pixels [][]float64, width uint16, height uint16, maxIterations uint16) {
@@ -93,10 +94,12 @@ func (m *TImage) SaveImage(layers [][][]float64, shadowLayers[][][]float64, isSh
 
         defer out.Close()
         
-        //for now, just lauch the app, would like this to spawn rather than block
-        cmd := exec.Command(`C:\Program Files\IrfanView\i_view64.exe`, filename[2:len(filename)])
-        if err := cmd.Run(); err != nil {
-            fmt.Println("Error:", err)
+        if (m.ShowPreview) {
+            //for now, just lauch the app, would like this to spawn rather than block
+            cmd := exec.Command(`C:\Program Files\IrfanView\i_view64.exe`, filename[2:len(filename)])
+            if err := cmd.Run(); err != nil {
+                fmt.Println("Error:", err)
+            }
         }
     }
 }

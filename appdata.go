@@ -56,6 +56,7 @@ func (appData *TAppData) initialise() {
     //default config for image output
     appData.Image = images.TImage {
         FilenameBase: "./out",
+        ShowPreview: false,
     }
     appData.Image.Initialise()
     defaultColourProfileString := "gray2"
