@@ -5,6 +5,7 @@ import (
     "wilf/gobrot/pkg/images"
     "wilf/gobrot/pkg/canvas"
     "wilf/gobrot/pkg/layers"
+    "wilf/gobrot/pkg/threed"
     "sync"
 )
 
@@ -12,6 +13,7 @@ type TAppData struct {
     Mandel mandelbrot.TMandel
     Layers layers.TLayers
     Image images.TImage
+    ThreeD threed.TThreeD
     Pixels [][]float64
     ShadowPixels [][]float64
     Canvas canvas.TCanvas
@@ -39,8 +41,8 @@ func getAppDataInstance() *TAppData {
 func (appData *TAppData) initialise() {
     //default config for mandelbrot
     appData.Mandel = mandelbrot.TMandel {
-        Width: uint16(2048),
-        Height: 2048,
+        Width: uint16(512),
+        Height: 512,
         Min: -2.0 - 1.25i,
         Max: 0.5 + 1.25i,
         MaxIterations: 2047,
@@ -61,6 +63,9 @@ func (appData *TAppData) initialise() {
         appData.ColourProfileString = defaultColourProfileString
     }
 
+    appData.ThreeD = threed.TThreeD {
+        FilenameBase: "./out",
+    }
     //whether to create the shadow mandel plot
     appData.IsShadowGenerated = false
 
