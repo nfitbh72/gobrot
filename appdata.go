@@ -41,11 +41,11 @@ func getAppDataInstance() *TAppData {
 func (appData *TAppData) initialise() {
     //default config for mandelbrot
     appData.Mandel = mandelbrot.TMandel {
-        Width: uint16(512),
-        Height: 512,
-        Min: -2.0 - 1.25i,
-        Max: 0.5 + 1.25i,
-        MaxIterations: 2047,
+        Width: uint16(1024),
+        Height: 1024,
+        Min: -2.0 - 2i,
+        Max: 2 + 2i,
+        MaxIterations: 512,
     }
 
     //default config for layers
@@ -67,6 +67,8 @@ func (appData *TAppData) initialise() {
     appData.ThreeD = threed.TThreeD {
         FilenameBase: "./out2",
         InverseDepth: true,
+        DepthScale: 0.5,
+        CutBelow: -0.1, //dont cut
     }
     //whether to create the shadow mandel plot
     appData.IsShadowGenerated = false

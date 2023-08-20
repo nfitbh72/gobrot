@@ -115,7 +115,7 @@ func (m *TImage) GetMinMax(layers[][][] float64) (float64, float64) {
             }
         }
     }
-    fmt.Println(minVal, maxVal)
+    //fmt.Println(minVal, maxVal)
     return minVal, maxVal
 }
 
@@ -130,7 +130,7 @@ func (m *TImage) GetImageFromLayer(
     width := len(layer)
     height := len(layer[0])
 
-    fmt.Println("isShadow", isShadow, "stretchValues", stretchValues)
+    //fmt.Println("isShadow", isShadow, "stretchValues", stretchValues)
     
     var img colourprofiles.IColourProfile
 

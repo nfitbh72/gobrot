@@ -10,10 +10,13 @@ import (
 type TThreeD struct {
 	FilenameBase string
 	InverseDepth bool
+	DepthScale float64
+	CutBelow float64
 }
 
 func (m *TThreeD) Initialise () {
 	m.InverseDepth = false
+	m.DepthScale = 1.0
 }
 
 //saves a new stl file for each layer
@@ -38,7 +41,7 @@ func (m *TThreeD) GetVec(i int, j int, width int, height int, depth float64, inv
 	v := stl.Vec3{
 		float32(i) / float32(width-1),
 		float32(j) / float32(height-1),
-		float32(depth),
+		float32(depth) * float32(m.DepthScale),
 	}
 	return v
 }
@@ -59,13 +62,11 @@ func (m *TThreeD) GetSolidFromLayer(layer [][]float64, name string) stl.Solid {
 	width := len(layer)
     height := len(layer[0])
 
-	//make a base of 2 triangles that covers the entire of the bottom
+	//4 vectors
 	p1 := stl.Vec3{0, 0, 0}
-	p2 := stl.Vec3{0, 1, 0}
-	p3 := stl.Vec3{1, 0, 0}
-	p4 := stl.Vec3{1, 1, 0}
-	//solid.AppendTriangle(m.GetTriangle(p2, p1, p3))
-	//solid.AppendTriangle(m.GetTriangle(p2, p4, p3))
+	p2 := stl.Vec3{0, 0, 0}
+	p3 := stl.Vec3{0, 0, 0}
+	p4 := stl.Vec3{0, 0, 0}
 
 	//for all lines
 	for i:= 0; i < width; i++ {
@@ -75,6 +76,10 @@ func (m *TThreeD) GetSolidFromLayer(layer [][]float64, name string) stl.Solid {
         for j := 0; j < height; j++ {
 			firstPixel := (j == 0)
 			lastPixel := (j == (height-1))
+
+			if (layer[i][j] <= m.CutBelow) {
+				layer[i][j] = 1.0
+			}
 
 			//first/last lines need special treatment to tie them into the bottom of the solid
 			if !firstPixel && (firstLine || lastLine) {
@@ -141,7 +146,7 @@ func (m *TThreeD) GetSolidFromLayer(layer [][]float64, name string) stl.Solid {
 					solid.AppendTriangle(t2)
 				}
 
-				//these are the base of the solid
+				//these are the base of the solid - same coords as the roof triangles except with their depth set to 0
 				p1 = m.GetVec(i-1, j-1, width, height, 0.0, false)
 				p2 = m.GetVec(i, j-1, width, height, 0.0, false)
 				p3 = m.GetVec(i-1, j, width, height, 0.0, false)
@@ -169,8 +174,7 @@ func (m *TThreeD) GetSolidFromLayer(layer [][]float64, name string) stl.Solid {
 	solid.RecalculateNormals()
 
 	errors := solid.Validate()
-
-
+	/*
 	for key, error := range errors {
 		fmt.Println(key, "has a problem", error.HasEqualVertices, error.NormalDoesNotMatch, len(error.EdgeErrors))
 		if (len(error.EdgeErrors) > 0) {
@@ -178,26 +182,9 @@ func (m *TThreeD) GetSolidFromLayer(layer [][]float64, name string) stl.Solid {
 			fmt.Println(error.EdgeErrors[0], "0->1: ", vs[0], "to", vs[1])
 			fmt.Println(error.EdgeErrors[1], "1->2: ", vs[1], "to", vs[2])
 			fmt.Println(error.EdgeErrors[2], "2->0: ", vs[2], "to", vs[0])
-			/*
-			for c, ee := range error.EdgeErrors {
-				if ee != nil {
-					fmt.Println(ee)
-					
-					vs := solid.Triangles[key].Vertices
-					switch c {
-						case 0: fmt.Println("0->1: ", vs[0], "to", vs[1])
-						case 1: fmt.Println("1->2: ", vs[1], "to", vs[2])
-						case 2: fmt.Println("2->0: ", vs[2], "to", vs[0])
-						default:
-					}
-					
-				}
-			}
-			*/
-			//fmt.Println(error.EdgeErrors)
-			//fmt.Println(solid.Triangles[key])
 		}
 	}
+	*/
 
 	fmt.Println("Solid has", len(errors), "validation errors")
 
@@ -205,6 +192,7 @@ func (m *TThreeD) GetSolidFromLayer(layer [][]float64, name string) stl.Solid {
 	return solid
 }
 
+//allows a test on a known and simple structure
 func (m *TThreeD) Test() {
 	layers := [][][]float64{
 		{

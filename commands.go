@@ -36,6 +36,7 @@ func (m *TCommands) initialise(appData *TAppData) {
     m.CLI.AddCommand("canvas", 0, 1, m.canvas, "Applies the fractal to a canvas")
     m.CLI.AddCommand("3d", 0, 0, m.threeD, "Generates an STL file for each layer")
     m.CLI.AddCommand("test", 0, 0, m.threeDTest, "Tests an STL file output")
+    m.CLI.AddCommand("depthscale", 1, 1, m.setDepthScale, "Sets the depth scale of 3d output")
     m.CLI.AddCommand("usage", 0, 0, m.usage, "Reports on memory usage")
     m.CLI.AddCommand("cp", 1, 1, m.setColourProfile, "Sets the colour profile to use")
     m.CLI.AddCommand("shadow", 1, 1, m.setShadow, "Sets whether shadows are used with on / off argument")
@@ -92,13 +93,21 @@ func (m *TCommands) buildMandel(arguments []string) {
     )
 }
 
+//saves the layers as stl files
 func (m *TCommands) threeD(arguments []string) {
     m.AppData.ThreeD.Save(m.AppData.Layers.Layers)
 }
 
+//runs the test function of threed
 func (m *TCommands) threeDTest(arguments []string) {
     m.AppData.ThreeD.Test()
 }
+
+func (m *TCommands) setDepthScale(arguments [] float64) {
+    m.AppData.ThreeD.DepthScale = arguments[0]
+    fmt.Println("DepthScale set to", arguments[0])
+}
+
 func (m *TCommands) buildImageOnly(arguments[] string) {
     m.AppData.Image.SaveImage(
         m.AppData.Layers.Layers, m.AppData.Layers.ShadowLayers, m.AppData.IsShadowGenerated, m.AppData.StretchValues,
