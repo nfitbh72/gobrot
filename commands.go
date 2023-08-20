@@ -35,7 +35,7 @@ func (m *TCommands) initialise(appData *TAppData) {
     m.CLI.AddCommand("ascii", 1, 2, m.buildMandelAscii, "Displays an ascii version of the Mandelbrot - specify width and height")
     m.CLI.AddCommand("canvas", 0, 1, m.canvas, "Applies the fractal to a canvas")
     m.CLI.AddCommand("3d", 0, 0, m.threeD, "Generates an STL file for each layer")
-    m.CLI.AddCommand("3dtest", 0, 0, m.threeDTest, "Tests an STL file output")
+    m.CLI.AddCommand("test", 0, 0, m.threeDTest, "Tests an STL file output")
     m.CLI.AddCommand("usage", 0, 0, m.usage, "Reports on memory usage")
     m.CLI.AddCommand("cp", 1, 1, m.setColourProfile, "Sets the colour profile to use")
     m.CLI.AddCommand("shadow", 1, 1, m.setShadow, "Sets whether shadows are used with on / off argument")

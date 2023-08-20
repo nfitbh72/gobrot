@@ -65,7 +65,8 @@ func (appData *TAppData) initialise() {
     }
 
     appData.ThreeD = threed.TThreeD {
-        FilenameBase: "./out",
+        FilenameBase: "./out2",
+        InverseDepth: true,
     }
     //whether to create the shadow mandel plot
     appData.IsShadowGenerated = false
