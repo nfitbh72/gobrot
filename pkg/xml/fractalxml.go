@@ -6,41 +6,41 @@ import (
 	"strconv"
 )
 
-//struct for the top level xml
+// struct for the top level xml
 type TMandelbrotXMLSettings struct {
-	XMLName xml.Name `xml:"mandelbrot_settings_2"`
-	Coords TCoords `xml:"limits"`
+	XMLName    xml.Name    `xml:"mandelbrot_settings_2"`
+	Coords     TCoords     `xml:"limits"`
 	Iterations TIterations `xml:"max_iterations"`
-	ImageSize TImageSize `xml:"image_size"`
+	ImageSize  TImageSize  `xml:"image_size"`
 }
 
-//struct for the coords part of the xml
+// struct for the coords part of the xml
 type TCoords struct {
 	XMLName xml.Name `xml:"limits"`
-	XMin string `xml:"xmin"`
-	YMin string `xml:"ymin"`
-	XMax string `xml:"xmax"`
-	YMax string `xml:"ymax"`
+	XMin    string   `xml:"xmin"`
+	YMin    string   `xml:"ymin"`
+	XMax    string   `xml:"xmax"`
+	YMax    string   `xml:"ymax"`
 }
 
-//struct for the iterations part of the xml
+// struct for the iterations part of the xml
 type TIterations struct {
 	XMLName xml.Name `xml:"max_iterations"`
-	Max string `xml:"value,attr"`
+	Max     string   `xml:"value,attr"`
 }
 
-//struct for the image size part of the xml
+// struct for the image size part of the xml
 type TImageSize struct {
 	XMLName xml.Name `xml:"image_size"`
-	Width string `xml:"width,attr"`
-	Height string `xml:"height,attr"`
+	Width   string   `xml:"width,attr"`
+	Height  string   `xml:"height,attr"`
 }
 
-//parses the XML and returns a new TMandelbrotXMLSettings object
+// parses the XML and returns a new TMandelbrotXMLSettings object
 func GetMandelBrotSettingsFromString(fractalXml string) TMandelbrotXMLSettings {
 	var mandelbrotXMLSettings TMandelbrotXMLSettings
-	error := xml.Unmarshal([]byte(fractalXml), &mandelbrotXMLSettings);
-	if (error == nil) {
+	error := xml.Unmarshal([]byte(fractalXml), &mandelbrotXMLSettings)
+	if error == nil {
 		//@TODO uncomment when fixed the below TODO
 		//mandelbrotXMLSettings.FixAspectBug()
 	} else {
@@ -49,20 +49,26 @@ func GetMandelBrotSettingsFromString(fractalXml string) TMandelbrotXMLSettings {
 	return mandelbrotXMLSettings
 }
 
-//assumes no error
+// assumes no error
 func strToFloat64(s string) float64 {
-    f, _ := strconv.ParseFloat(s, 64)
-    return f
+	f, _ := strconv.ParseFloat(s, 64)
+	return f
 }
 
-//assumes no error
+// assumes no error
 func strToUint16(s string) uint16 {
 	i, _ := strconv.ParseUint(s, 10, 16)
 	return uint16(i)
 }
 
-//there is a bug in the XML where if you change the aspect ratio the y min/max assumes the 800x600 ratio
+func strToUint(s string) uint {
+	i, _ := strconv.ParseUint(s, 10, 64)
+	return uint(i)
+}
+
+// there is a bug in the XML where if you change the aspect ratio the y min/max assumes the 800x600 ratio
 func (settings *TMandelbrotXMLSettings) FixAspectBug() {
+	fmt.Println("fixing aspect ration bug")
 	min := settings.GetMin()
 	max := settings.GetMax()
 	//width := float64(settings.GetWidth())
@@ -70,15 +76,14 @@ func (settings *TMandelbrotXMLSettings) FixAspectBug() {
 	deltaX := real(max) - real(min)
 	deltaY := imag(max) - imag(min)
 	diff := deltaX - deltaY
-	minY := imag(min) - diff / 2.0
-	maxY := imag(max) + diff / 2.0
+	minY := imag(min) - diff/2.0
+	maxY := imag(max) + diff/2.0
 	//@TODO turning it back into a string using sprintf is bad - very small floating point numbers get rounded this way
-	settings.Coords.YMin = fmt.Sprintf("%e", minY)
-	settings.Coords.YMax = fmt.Sprintf("%e", maxY)
+	settings.Coords.YMin = fmt.Sprintf("%.10f", minY)
+	settings.Coords.YMax = fmt.Sprintf("%.10f", maxY)
 }
 
-
-//gets the minX, minY
+// gets the minX, minY
 func (settings *TMandelbrotXMLSettings) GetMin() complex128 {
 	return complex(
 		strToFloat64(settings.Coords.XMin),
@@ -86,7 +91,7 @@ func (settings *TMandelbrotXMLSettings) GetMin() complex128 {
 	)
 }
 
-//gets the maxX, maxY
+// gets the maxX, maxY
 func (settings *TMandelbrotXMLSettings) GetMax() complex128 {
 	return complex(
 		strToFloat64(settings.Coords.XMax),
@@ -94,21 +99,20 @@ func (settings *TMandelbrotXMLSettings) GetMax() complex128 {
 	)
 }
 
-//gets the max iterations
-func (settings *TMandelbrotXMLSettings) GetMaxIterations() uint16 {
-	return strToUint16(settings.Iterations.Max)
+// gets the max iterations
+func (settings *TMandelbrotXMLSettings) GetMaxIterations() uint {
+	return strToUint(settings.Iterations.Max)
 }
 
-//gets the width
+// gets the width
 func (settings *TMandelbrotXMLSettings) GetWidth() uint16 {
 	return strToUint16(settings.ImageSize.Width)
 }
 
-//gets the height
+// gets the height
 func (settings *TMandelbrotXMLSettings) GetHeight() uint16 {
 	return strToUint16(settings.ImageSize.Height)
 }
-
 
 func TestFractalXml() {
 	testXml := `<?xml version='1.0'?>

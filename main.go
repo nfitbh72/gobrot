@@ -1,31 +1,29 @@
 package main
 
 import (
-    "fmt"
+	"fmt"
 )
 
-//keeping all the main data here
+// keeping all the main data here
 type TMain struct {
-    AppData *TAppData
-    Commands TCommands
+	AppData  *TAppData
+	Commands *TCommands
 }
-var Main TMain
 
 func main() {
+	m := TMain{
+		AppData:  getAppDataInstance(),
+		Commands: &TCommands{},
+	}
 
-    //testThis()
-    //get the app data
-    Main.AppData = getAppDataInstance()
+	//init the commands
+	m.Commands.initialise(m.AppData)
 
-    //init the commands
-    Main.Commands.initialise(Main.AppData)
+	//welcome message
+	fmt.Println("Welcome to GOBROT")
+	fmt.Println()
+	fmt.Println("Add Commands / XML here:")
 
-    //welcome message
-    fmt.Println("Welcome to GOBROT")
-    fmt.Println()
-    fmt.Println("Add Commands / XML here:")
-
-    //run the CLI
-    Main.Commands.run()
-
+	//run the CLI
+	m.Commands.run()
 }

@@ -1,5 +1,6 @@
 *.png
 *.stl
+*.fpp
 .vs
 *.sln
 *.vcxproj*
