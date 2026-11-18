@@ -131,6 +131,9 @@ func (m *TImage) GetImageFromLayer(
 	layer [][]float64, shadowLayer [][]float64, isShadow bool, minVal float64, maxVal float64, stretchValues bool,
 ) colourprofiles.IColourProfile {
 
+	if len(layer) == 0 {
+		return nil
+	}
 	width := len(layer)
 	height := len(layer[0])
 
