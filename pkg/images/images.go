@@ -83,6 +83,10 @@ func (m *TImage) SaveImage(layers [][][]float64, shadowLayers [][][]float64, isS
 			shadowLayer = shadowLayers[n]
 		}
 		image := m.GetImageFromLayer(layer, shadowLayer, isShadow, minVal, maxVal, stretchValues)
+		if image == nil {
+			fmt.Println("layer", n, "is empty, skipping")
+			continue
+		}
 		filename := m.FilenameBase + strconv.Itoa(n) + ".png"
 		fmt.Println("saving", filename)
 		out, err := os.Create(filename)
