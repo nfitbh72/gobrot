@@ -1,6 +1,11 @@
 package fractals
 
-import "testing"
+import (
+	"github.com/nfitbh72/gobrot/pkg/bigfloat"
+	"io"
+	"os"
+	"testing"
+)
 
 func TestCentre(t *testing.T) {
 	tests := []struct {
@@ -19,5 +24,26 @@ func TestCentre(t *testing.T) {
 				t.Errorf("centre(%v,%v,%v,%v) = %v, want %v", tc.minX, tc.maxX, tc.minY, tc.maxY, got, tc.want)
 			}
 		})
+	}
+}
+
+// SetPrecision re-parses the bounds quietly; only SetBounds reports them
+func TestSetPrecisionDoesNotPrintBounds(t *testing.T) {
+	m := &TFractal{BF: &bigfloat.TBigFloats{Prec: 53}}
+	m.SetBounds("-2", "2", "-2", "2")
+
+	r, w, _ := os.Pipe()
+	old := os.Stdout
+	os.Stdout = w
+	m.SetPrecision(100)
+	os.Stdout = old
+	w.Close()
+	out, _ := io.ReadAll(r)
+
+	if len(out) != 0 {
+		t.Errorf("SetPrecision printed %q", out)
+	}
+	if m.MinX.Prec() != 100 {
+		t.Errorf("MinX precision = %d, want 100", m.MinX.Prec())
 	}
 }

@@ -35,16 +35,20 @@ type TFractal struct {
 
 // Sets the bounds of the fractal from string floats into big floats
 func (m *TFractal) SetBounds(minx string, maxx string, miny string, maxy string) {
+	m.parseBounds(minx, maxx, miny, maxy)
+	diffX := m.BF.SubBig(m.MaxX, m.MinX)
+	diffY := m.BF.SubBig(m.MaxY, m.MinY)
+
+	fmt.Printf("floats: %v %v %v %v %v %v\n", m.MinX, m.MaxX, m.MinY, m.MaxY, diffX, diffY)
+}
+
+// parseBounds stores the bound strings and parses them at the current precision
+func (m *TFractal) parseBounds(minx string, maxx string, miny string, maxy string) {
 	m.boundStrings = [4]string{minx, maxx, miny, maxy}
 	m.MinX = m.BF.NewBigS(minx)
 	m.MaxX = m.BF.NewBigS(maxx)
 	m.MinY = m.BF.NewBigS(miny)
 	m.MaxY = m.BF.NewBigS(maxy)
-
-	diffX := m.BF.SubBig(m.MaxX, m.MinX)
-	diffY := m.BF.SubBig(m.MaxY, m.MinY)
-
-	fmt.Printf("floats: %v %v %v %v %v %v\n", m.MinX, m.MaxX, m.MinY, m.MaxY, diffX, diffY)
 }
 
 // SetPrecision changes the big float precision and re-parses the stored bounds at the new
@@ -53,7 +57,7 @@ func (m *TFractal) SetPrecision(prec uint) {
 	m.BF.Prec = prec
 	if m.boundStrings != [4]string{} {
 		b := m.boundStrings
-		m.SetBounds(b[0], b[1], b[2], b[3])
+		m.parseBounds(b[0], b[1], b[2], b[3])
 	}
 }
 
