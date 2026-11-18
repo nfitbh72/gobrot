@@ -1,10 +1,10 @@
 module github.com/nfitbh72/gobrot
 
-go 1.20
+go 1.27.4
 
 require (
-	github.com/hschendel/stl v1.0.4
-	golang.org/x/term v0.5.0
+	github.com/hschendel/stl v1.0.5
+	golang.org/x/term v0.48.0
 )
 
-require golang.org/x/sys v0.6.0 // indirect
+require golang.org/x/sys v0.50.0 // indirect

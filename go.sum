@@ -1,6 +1,6 @@
-github.com/hschendel/stl v1.0.4 h1:DXT5rkiXMUkbKw4Ndi1OYZ/a5SLR35TzxGj46p5Qyf8=
-github.com/hschendel/stl v1.0.4/go.mod h1:XQFFLKrq9YTaBpmouDui4JSaxMyAYkpD7elGSSj/y3M=
-golang.org/x/sys v0.6.0 h1:MVltZSvRTcU2ljQOhs94SXPftV6DCNnZViHeQps87pQ=
-golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
-golang.org/x/term v0.5.0 h1:n2a8QNdAb0sZNpU9R1ALUXBbY+w51fCQDN+7EdxNBsY=
-golang.org/x/term v0.5.0/go.mod h1:jMB1sMXY+tzblOD4FWmEbocvup2/aLOaQEp7JmGp78k=
+github.com/hschendel/stl v1.0.5 h1:cRzVlq0zvjnSkdrRYz2vvrNnyv6H6fk/411ntjhZU5k=
+github.com/hschendel/stl v1.0.5/go.mod h1:3tNiT0HbB1jTtpawGklGQOBnWbaSCdpVKxA2+8DuERc=
+golang.org/x/sys v0.50.0 h1:dkKZEFTEKaLr1sjhs0WiKqoi8Jj5nHbS3Njmx1UoMJs=
+golang.org/x/sys v0.50.0/go.mod h1:hNLxWAXmnKAxqDtdwIYC4bM9oQPEecfsnNMuSxOs3og=
+golang.org/x/term v0.48.0 h1:G6UU1eiSB8nl3DzeUGt7Mg+2SctI8tPS6Z5/mBt6cOk=
+golang.org/x/term v0.48.0/go.mod h1:BRDLHCZr2SUjIeBHHpRyQeC9xzSAVbzY2rvKgafnHf4=
