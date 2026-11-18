@@ -44,12 +44,6 @@ func (m *TFractal) SetBounds(minx string, maxx string, miny string, maxy string)
 	fmt.Printf("floats: %v %v %v %v %v %v\n", m.MinX, m.MaxX, m.MinY, m.MaxY, diffX, diffY)
 }
 
-/*
-func (m *TFractal) getCoord(pixel int, maxPixel uint16, minCoord float64, maxCoord float64) float64 {
-	return float64(pixel)/float64(maxPixel)*(maxCoord-minCoord) + minCoord
-}
-*/
-
 // gets the (real or imaginary) coordinate from the x or y location
 func (m *TFractal) getBigCoord(pixel int, maxPixel uint16, minCoord *big.Float, maxCoord *big.Float) *big.Float {
 	return m.BF.AddBig(
@@ -61,6 +55,7 @@ func (m *TFractal) getBigCoord(pixel int, maxPixel uint16, minCoord *big.Float, 
 	)
 }
 
+// @TODO update for big numbers
 func (m *TFractal) AdjustForShadowMandel() {
 	/*
 		adjustment := (m.Max - m.Min) / complex(float64(m.Width)*2.0, float64(m.Height)*2.0)
@@ -100,6 +95,12 @@ func (m *TFractal) GetFractal() [][]float64 {
 		x := m.getBigCoord(px, m.Width, m.MinX, m.MaxX)
 		juliaX := 1.5 * (float64(px) - float64(m.Width)/2) / (0.5 * float64(m.Width))
 		//multi-threading each column - couldn't really be much easier!
+		//@TODO really should only spawn these 16 at a time... spawning eg 2048 of them is a bit nuts,
+		//they'll all be competing for the same resources and this has got to be inefficient...
+		//there's got to be a way of passing a function reference (in this case to generate a row of the fractal)
+		//to a function so that a configurable number (e.g. 16) of them get executed in parallel rather than
+		//the number of rows executing in parallel (e.g. 2048)
+
 		go func(pys []float64) {
 			defer wg.Done()
 			//for each row within the column
@@ -124,11 +125,8 @@ func (m *TFractal) GetFractal() [][]float64 {
 				if m.Step != 0.0 {
 					pys[py] = m.ApplyStep(pys[py], m.Step)
 				}
-
-				//unused, but an alternative where we turn the number of iterations into a float
-				//pys[py] = float64(mandel.mandelbrot(z, mandel.MaxIterations)) / float64(mandel.MaxIterations)
 			}
-			fmt.Print(".")
+			fmt.Print(".") //can see threads ending
 		}(pixels[px])
 	}
 	fmt.Println("waiting for", m.Width, "threads")
@@ -191,11 +189,6 @@ func (m *TFractal) mandelbrotUsingBigFloat(real *big.Float, imag *big.Float, hei
 		vrfloat, _ := vreal.Float64()
 		vifloat, _ := vimag.Float64()
 		abs2 := vrfloat*vrfloat + vifloat*vifloat
-		/*
-			abs2, _ := m.BF.AddBig(
-				m.BF.MulBig(vreal, vreal), m.BF.MulBig(vimag, vimag),
-			).Float64()
-		*/
 		if abs2 > 4.0 {
 			return height
 		}

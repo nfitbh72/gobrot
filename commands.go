@@ -209,12 +209,14 @@ func (m *TCommands) setLayers(arguments []float64) {
 
 // command to show the current configuration
 func (m *TCommands) showConfig(arguments []string) {
-	fmt.Println(m.AppData.Fractal)
+	fmt.Printf("%+v\n", m.AppData.Fractal)
 	fmt.Println(m.AppData.Layers.LayersConfig)
 	fmt.Println(m.AppData.Image)
 	fmt.Println("ColourProfileString", m.AppData.ColourProfileString)
 	fmt.Println("IsShadowGenerated", m.AppData.IsShadowGenerated, "StretchValues", m.AppData.StretchValues)
 	fmt.Println("3d", m.AppData.ThreeD)
+	fmt.Println("Step", m.AppData.Fractal.Step)
+	fmt.Println("big float precision", m.AppData.Fractal.BF.Prec)
 }
 
 // command to execute the canvas
