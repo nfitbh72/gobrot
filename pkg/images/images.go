@@ -158,7 +158,7 @@ func (m *TImage) GetImageFromLayer(
 
 				shadowDepth := float64(0)
 				if isShadow {
-					shadowDepth := shadowLayer[i][j]
+					shadowDepth = shadowLayer[i][j]
 					//stretch values ensures that depth uses all of 0.0 to 1.0
 					if stretchValues {
 						shadowDepth = stretchValue(shadowDepth, minVal, maxVal)
@@ -171,7 +171,7 @@ func (m *TImage) GetImageFromLayer(
 				if depth > maxC {
 					maxC = depth
 				}
-				img.SetPixel(i, height-j, depth, isShadow, shadowDepth)
+				img.SetPixel(i, height-1-j, depth, isShadow, shadowDepth)
 			}
 		}
 		fmt.Println("MinDepth: ", minC, "; MaxDepth: ", maxC)
