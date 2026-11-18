@@ -53,9 +53,10 @@ func (canvas *TCanvas) Run(mWidth uint16, mHeight uint16, mMaxIterations uint) {
 	}
 
 	//make OutPixels
-	canvas.OutPixels = make([][]float64, mHeight)
+	//same [x][y] layout as the rest of the pipeline
+	canvas.OutPixels = make([][]float64, mWidth)
 	for i := range canvas.OutPixels {
-		canvas.OutPixels[i] = make([]float64, mWidth)
+		canvas.OutPixels[i] = make([]float64, mHeight)
 	}
 
 	//loop around the width and height
@@ -73,13 +74,13 @@ func (canvas *TCanvas) Run(mWidth uint16, mHeight uint16, mMaxIterations uint) {
 			}
 
 			//get the mandel component of the end result - e.g. 20% MandelEffect
-			mandelZ := canvas.InPixels[y][x] * canvas.MandelEffect
+			mandelZ := canvas.InPixels[x][y] * canvas.MandelEffect
 
 			//get the canvas component of the end result - e.g. (100 - 20) == 80% Canvas effect
 			canvasZ = canvasZ * (1.0 - canvas.MandelEffect)
 
 			//record the output of the 2 components
-			canvas.OutPixels[y][x] = canvasZ + mandelZ
+			canvas.OutPixels[x][y] = canvasZ + mandelZ
 		}
 	}
 }
