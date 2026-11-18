@@ -12,6 +12,9 @@ import (
 	"golang.org/x/term"
 )
 
+// Unlimited as MaxArguments means the command accepts any number of arguments.
+const Unlimited = ^uint16(0)
+
 type TCommand struct {
 	Callback     any //func([]int)|func([]float64)|func([]string)
 	Keyword      string
@@ -86,7 +89,7 @@ func (clinterface *TCLI) Help(arguments []string) {
 				argumentType = "<float>"
 			}
 			argumentListStr := ""
-			if command.MaxArguments < command.MinArguments {
+			if command.MaxArguments == Unlimited {
 				argumentListStr = "[" + argumentType + "]"
 			} else {
 				for i := command.MinArguments; i <= command.MaxArguments; i++ {
@@ -149,7 +152,7 @@ func (clinterface *TCLI) Run() {
 	clinterface.Finish = false
 	//add exit function
 	clinterface.AddCommand("exit", 0, 0, clinterface.exit, "exit: quits this program")
-	clinterface.AddCommand("help", 0, 0, clinterface.Help, "help: a little recursive, don't you think?")
+	clinterface.AddCommand("help", 0, 1, clinterface.Help, "help: a little recursive, don't you think?")
 	//fmt.Println("commands:", clinterface.Commands)
 
 	reader := bufio.NewReader(os.Stdin)
@@ -190,63 +193,72 @@ func (clinterface *TCLI) Run() {
 				buffer = ""
 			}
 		} else {
-			//fmt.Println("got command", line)
-			//fmt.Println("commands", clinterface.Commands)
-			for _, command := range clinterface.Commands {
-				commandLen := len(command.Keyword)
-				if clinterface.doesCommandMatch(line, command.Keyword) {
-					//fmt.Println("got command", command.Keyword)
-					//depending on the type of the argument of the callback function,
-					//we format string, int or float64 differently
-					switch reflect.TypeOf(command.Callback).String() {
-					case "func([]string)":
-						var args []string
-						if len(line) > commandLen {
-							args = strings.Split(line[commandLen+1:], " ")
-						} else {
-							args = []string{}
-						}
-						//fmt.Println("string function about to be called with args", args)
-						command.Callback.(func([]string))(args)
-					case "func([]int)":
-						var args []int
-						if len(line) > commandLen {
-							stringArgs := strings.Split(line[commandLen+1:], " ")
-							for _, stringArg := range stringArgs {
-								i, err := strconv.ParseInt(stringArg, 10, 64)
-								if err == nil {
-									args = append(args, int(i))
-								} else {
-									fmt.Println("could not parse as int", stringArg)
-									fmt.Printf("Error:%v\n", err)
-								}
-							}
-						} else {
-							args = []int{}
-						}
-						command.Callback.(func([]int))(args)
-					case "func([]float64)":
-						var args []float64
-						if len(line) > commandLen {
-							stringArgs := strings.Split(line[commandLen+1:], " ")
-							for _, stringArg := range stringArgs {
-								f, err := strconv.ParseFloat(stringArg, 64)
-								if err == nil {
-									args = append(args, f)
-								} else {
-									fmt.Println("could not parse as float64", stringArg)
-									fmt.Printf("Error:%v\n", err)
-								}
-							}
-						} else {
-							args = []float64{}
-						}
-						command.Callback.(func([]float64))(args)
-					}
-
-				} //endif this keyword is the first word
-			} //end foreach command
+			clinterface.Dispatch(line)
 		} //endif multiline
 	} //while not finish
 
+}
+
+// Dispatch runs every command whose keyword starts the line. The arguments are
+// checked against the command's min/max count and parsed for the callback's
+// type; if either fails a message is printed and the callback is not called.
+func (clinterface *TCLI) Dispatch(line string) {
+	for _, command := range clinterface.Commands {
+		if !clinterface.doesCommandMatch(line, command.Keyword) {
+			continue
+		}
+		tokens := strings.Fields(line[len(command.Keyword):])
+		if len(tokens) < int(command.MinArguments) ||
+			(command.MaxArguments != Unlimited && len(tokens) > int(command.MaxArguments)) {
+			fmt.Println("wrong number of arguments for", command.Keyword)
+			fmt.Println("usage:", usage(command))
+			continue
+		}
+		//depending on the type of the argument of the callback function,
+		//we format string, int or float64 differently
+		switch reflect.TypeOf(command.Callback).String() {
+		case "func([]string)":
+			command.Callback.(func([]string))(tokens)
+		case "func([]int)":
+			args := make([]int, 0, len(tokens))
+			for _, token := range tokens {
+				i, err := strconv.ParseInt(token, 10, 64)
+				if err != nil {
+					fmt.Println(command.Keyword+": could not parse as int:", token)
+					args = nil
+					break
+				}
+				args = append(args, int(i))
+			}
+			if args != nil {
+				command.Callback.(func([]int))(args)
+			}
+		case "func([]float64)":
+			args := make([]float64, 0, len(tokens))
+			for _, token := range tokens {
+				f, err := strconv.ParseFloat(token, 64)
+				if err != nil {
+					fmt.Println(command.Keyword+": could not parse as number:", token)
+					args = nil
+					break
+				}
+				args = append(args, f)
+			}
+			if args != nil {
+				command.Callback.(func([]float64))(args)
+			}
+		}
+	}
+}
+
+// usage describes how many arguments a command takes
+func usage(command TCommand) string {
+	switch {
+	case command.MaxArguments == Unlimited:
+		return fmt.Sprintf("%s (at least %d arguments)", command.Keyword, command.MinArguments)
+	case command.MinArguments == command.MaxArguments:
+		return fmt.Sprintf("%s (%d arguments)", command.Keyword, command.MinArguments)
+	default:
+		return fmt.Sprintf("%s (%d to %d arguments)", command.Keyword, command.MinArguments, command.MaxArguments)
+	}
 }

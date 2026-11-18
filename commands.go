@@ -8,6 +8,7 @@ import (
 	"github.com/nfitbh72/gobrot/pkg/shapes"
 	"github.com/nfitbh72/gobrot/pkg/usage"
 	fractalxml "github.com/nfitbh72/gobrot/pkg/xml"
+	"math"
 )
 
 type TCommands struct {
@@ -34,8 +35,8 @@ func (m *TCommands) initialise(appData *TAppData) {
 	m.CLI.AddCommand("coords", 4, 4, m.setCoords, "Sets the real-min, imaginary-min, real-max, imaginary-max values")
 	m.CLI.AddCommand("config", 0, 0, m.showConfig, "Displays the configuration currently being used")
 	m.CLI.AddCommand("go", 0, 0, m.buildMandel, "Runs the algorithm, outputs the png(s)")
-	m.CLI.AddCommand("layers", 1, 0, m.setLayers, "If you want many pngs for different layers then specify percentages for which the layer breaks exist (do not include 0 or 100, these are assumed)")
-	m.CLI.AddCommand("ascii", 1, 2, m.buildMandelAscii, "Displays an ascii version of the Mandelbrot - specify width and height")
+	m.CLI.AddCommand("layers", 0, cli.Unlimited, m.setLayers, "If you want many pngs for different layers then specify percentages for which the layer breaks exist (do not include 0 or 100, these are assumed)")
+	m.CLI.AddCommand("ascii", 2, 2, m.buildMandelAscii, "Displays an ascii version of the Mandelbrot - specify width and height")
 	m.CLI.AddCommand("canvas", 0, 1, m.canvas, "Applies the fractal to a canvas")
 	m.CLI.AddCommand("3d", 0, 0, m.threeD, "Generates an STL file for each layer")
 	m.CLI.AddCommand("test", 0, 0, m.threeDTest, "Tests an STL file output")
@@ -73,13 +74,30 @@ func (m *TCommands) circle(arguments []float64) {
 	fmt.Println("Circle done")
 }
 
+// toDimension checks a width/height in pixels fits a uint16 and is non-zero
+func toDimension(name string, v int) (uint16, bool) {
+	if v < 1 || v > math.MaxUint16 {
+		fmt.Printf("%s must be between 1 and %d\n", name, math.MaxUint16)
+		return 0, false
+	}
+	return uint16(v), true
+}
+
 func (m *TCommands) setHeight(arguments []int) {
-	m.AppData.Fractal.Height = uint16(arguments[0])
+	height, ok := toDimension("height", arguments[0])
+	if !ok {
+		return
+	}
+	m.AppData.Fractal.Height = height
 	fmt.Println("Height set to", m.AppData.Fractal.Height)
 }
 
 func (m *TCommands) setWidth(arguments []int) {
-	m.AppData.Fractal.Width = uint16(arguments[0])
+	width, ok := toDimension("width", arguments[0])
+	if !ok {
+		return
+	}
+	m.AppData.Fractal.Width = width
 	fmt.Println("width set to", m.AppData.Fractal.Width)
 }
 
@@ -89,6 +107,10 @@ func (m *TCommands) setStep(arguments []float64) {
 }
 
 func (m *TCommands) setMaxIterations(arguments []int) {
+	if arguments[0] < 1 {
+		fmt.Println("iterations must be at least 1")
+		return
+	}
 	m.AppData.Fractal.MaxIterations = uint(arguments[0])
 	fmt.Println("max iterations set to", m.AppData.Fractal.MaxIterations)
 }
@@ -156,8 +178,16 @@ func (m *TCommands) buildMandelAscii(arguments []int) {
 	//clone the mandel
 	asciiMandelConfig := m.AppData.Fractal
 	//set width and height
-	asciiMandelConfig.Width = uint16(arguments[0])
-	asciiMandelConfig.Height = uint16(arguments[1])
+	width, ok := toDimension("width", arguments[0])
+	if !ok {
+		return
+	}
+	height, ok := toDimension("height", arguments[1])
+	if !ok {
+		return
+	}
+	asciiMandelConfig.Width = width
+	asciiMandelConfig.Height = height
 	//generate the mandel and then call PrintAscii function
 	var pixels [][]float64 = asciiMandelConfig.GetFractal()
 	m.AppData.Image.PrintAscii(
