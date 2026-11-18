@@ -98,9 +98,6 @@ func (m *TFractal) GetFractal() [][]float64 {
 	for i := range pixels {
 		pixels[i] = make([]float64, m.Height)
 	}
-	//a useful calculation to have before looping
-	heightPerIteration := 1.0 / float64(m.MaxIterations)
-
 	//julia point is the centre point
 	minX, _ := m.MinX.Float64()
 	minY, _ := m.MinY.Float64()
@@ -134,15 +131,15 @@ func (m *TFractal) GetFractal() [][]float64 {
 				//store the pixel as a float between 0.0 and 1.0
 				if m.FractalType == Mandel {
 					if m.BF.Prec > 53 {
-						pys[py] = m.mandelbrotUsingBigFloat(x, y, heightPerIteration)
+						pys[py] = m.mandelbrotUsingBigFloat(x, y)
 					} else {
 						xfloat, _ := x.Float64()
 						yfloat, _ := y.Float64()
-						pys[py] = m.mandelbrotUsingFloat64(complex(xfloat, yfloat), heightPerIteration)
+						pys[py] = m.mandelbrotUsingFloat64(complex(xfloat, yfloat))
 					}
 				}
 				if m.FractalType == BSJulia {
-					pys[py] = m.bsJuliaAsFloat(juliaY, heightPerIteration, juliaPoint)
+					pys[py] = m.bsJuliaAsFloat(juliaY, juliaPoint)
 				}
 				if m.Step != 0.0 {
 					pys[py] = m.ApplyStep(pys[py], m.Step)
@@ -177,12 +174,12 @@ func (mandel *TMandel) mandelbrot(z complex128, maxIterations uint16) uint16 {
 
 // the actual function that does the mandel algorithm
 // for a complex coordinate, determine how many iterations is required to escape the mandelbrot
-func (m *TFractal) mandelbrotUsingFloat64(z complex128, heightPerIteration float64) float64 {
+func (m *TFractal) mandelbrotUsingFloat64(z complex128) float64 {
 	var v complex128 = 0.0 + 0.0i
-	for height := 0.0; height < 1.0; height = height + heightPerIteration {
+	for i := uint(0); i < m.MaxIterations; i++ {
 		v = v*v + z
 		if cmplx.Abs(v) > 2 {
-			return height
+			return float64(i) / float64(m.MaxIterations)
 		}
 	}
 	return 1.0
@@ -198,10 +195,10 @@ func (m *TFractal) squareBigFloat(vreal *big.Float, vimag *big.Float) (*big.Floa
 
 // the actual function that does the mandel algorithm
 // for a complex coordinate, determine how many iterations is required to escape the mandelbrot
-func (m *TFractal) mandelbrotUsingBigFloat(real *big.Float, imag *big.Float, heightPerIteration float64) float64 {
+func (m *TFractal) mandelbrotUsingBigFloat(real *big.Float, imag *big.Float) float64 {
 	vreal := m.BF.NewBig0()
 	vimag := m.BF.NewBig0()
-	for height := 0.0; height < 1.0; height = height + heightPerIteration {
+	for i := uint(0); i < m.MaxIterations; i++ {
 		vreal, vimag = m.squareBigFloat(vreal, vimag)
 		vreal = m.BF.AddBig(vreal, real)
 		vimag = m.BF.AddBig(vimag, imag)
@@ -212,19 +209,19 @@ func (m *TFractal) mandelbrotUsingBigFloat(real *big.Float, imag *big.Float, hei
 		vifloat, _ := vimag.Float64()
 		abs2 := vrfloat*vrfloat + vifloat*vifloat
 		if abs2 > 4.0 {
-			return height
+			return float64(i) / float64(m.MaxIterations)
 		}
 	}
 	return 1.0
 }
 
 // for a complex coordinate, determine how many iterations is required to escape the bsjulia
-func (m *TFractal) bsJuliaAsFloat(z complex128, heightPerIteration float64, v complex128) float64 {
+func (m *TFractal) bsJuliaAsFloat(z complex128, v complex128) float64 {
 	//v := complex(-0.1, 0.651)
-	for height := 0.0; height < 1.0; height = height + heightPerIteration {
+	for i := uint(0); i < m.MaxIterations; i++ {
 		z = z*z + v
 		if cmplx.Abs(z) > 2 {
-			return height
+			return float64(i) / float64(m.MaxIterations)
 		}
 	}
 	return 1.0
