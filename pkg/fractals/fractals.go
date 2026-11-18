@@ -69,6 +69,11 @@ func (m *TFractal) ApplyStep(v float64, step float64) float64 {
 	return math.Round(v/step) * step
 }
 
+// centre returns the midpoint of the view as a complex number
+func centre(minX, maxX, minY, maxY float64) complex128 {
+	return complex((minX+maxX)/2.0, (minY+maxY)/2.0)
+}
+
 // gets a 2 dimensional float64 slice of the mandelbrot
 func (m *TFractal) GetFractal() [][]float64 {
 	then := time.Now().UnixMilli()
@@ -84,7 +89,7 @@ func (m *TFractal) GetFractal() [][]float64 {
 	minY, _ := m.MinY.Float64()
 	maxX, _ := m.MaxX.Float64()
 	maxY, _ := m.MaxY.Float64()
-	juliaPoint := complex(minX+maxX/2.0, minY+maxY/2.0)
+	juliaPoint := centre(minX, maxX, minY, maxY)
 
 	var wg sync.WaitGroup
 	wg.Add(int(m.Width))
