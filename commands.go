@@ -252,6 +252,8 @@ func (m *TCommands) showConfig(arguments []string) {
 func (m *TCommands) prepareCanvas(arguments []string) {
 	//only InPixels and the method change: MandelEffect keeps whatever cstr set
 	m.AppData.Canvas.InPixels = m.AppData.Pixels
+	//a failed run returns early, so drop any output left by the previous run
+	m.AppData.Canvas.OutPixels = nil
 	if len(arguments) > 0 {
 		m.AppData.Canvas.CanvasMethodName = arguments[0]
 	} else {

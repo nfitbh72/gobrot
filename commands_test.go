@@ -73,3 +73,19 @@ func TestCanvasDefaultStrengthWithoutCstr(t *testing.T) {
 		t.Errorf("default MandelEffect = %v, want 0.1", got)
 	}
 }
+
+// a failed canvas run must not re-process the previous run's output
+func TestPrepareCanvasClearsStaleOutput(t *testing.T) {
+	c := newTestCommands()
+	c.AppData.Pixels = [][]float64{{0.5}}
+	c.prepareCanvas([]string{"dome"})
+	c.AppData.Canvas.Run(1, 1, 10)
+	if c.AppData.Canvas.OutPixels == nil {
+		t.Fatal("setup: dome run produced no output")
+	}
+	c.prepareCanvas([]string{"bogus"})
+	c.AppData.Canvas.Run(1, 1, 10) // invalid method: returns early
+	if c.AppData.Canvas.OutPixels != nil {
+		t.Errorf("stale OutPixels from previous run: %v", c.AppData.Canvas.OutPixels)
+	}
+}
