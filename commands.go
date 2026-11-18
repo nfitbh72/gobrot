@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/nfitbh72/gobrot/pkg/canvas"
 	"github.com/nfitbh72/gobrot/pkg/cli"
 	"github.com/nfitbh72/gobrot/pkg/fractals"
 	"github.com/nfitbh72/gobrot/pkg/shapes"
@@ -249,18 +248,22 @@ func (m *TCommands) showConfig(arguments []string) {
 	fmt.Println("big float precision", m.AppData.Fractal.BF.Prec)
 }
 
-// command to execute the canvas
-func (m *TCommands) canvas(arguments []string) {
-
-	m.AppData.Canvas = canvas.TCanvas{
-		InPixels:     m.AppData.Pixels,
-		MandelEffect: 0.1,
-	}
+// prepareCanvas sets up the canvas for a run from the current pixels and the command arguments
+func (m *TCommands) prepareCanvas(arguments []string) {
+	//only InPixels and the method change: MandelEffect keeps whatever cstr set
+	m.AppData.Canvas.InPixels = m.AppData.Pixels
+	//a failed run returns early, so drop any output left by the previous run
+	m.AppData.Canvas.OutPixels = nil
 	if len(arguments) > 0 {
 		m.AppData.Canvas.CanvasMethodName = arguments[0]
 	} else {
 		m.AppData.Canvas.CanvasMethodName = "test"
 	}
+}
+
+// command to execute the canvas
+func (m *TCommands) canvas(arguments []string) {
+	m.prepareCanvas(arguments)
 	m.AppData.Canvas.Run(m.AppData.Fractal.Width, m.AppData.Fractal.Height, m.AppData.Fractal.MaxIterations)
 	//var shadowPixels = [][][]float64
 	m.AppData.Layers.ProcessLayers(m.AppData.Canvas.OutPixels, false)
