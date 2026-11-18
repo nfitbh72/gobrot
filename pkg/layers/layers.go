@@ -34,9 +34,6 @@ func (layers *TLayers) GetLayers(pixels [][]float64) [][][]float64 {
 			}
 		}
 		fmt.Println("layer", layerIndex, "has", count, "points")
-		if layerConfig[1] == 1.0 {
-			break
-		}
 	}
 	return retLayers
 }

@@ -59,11 +59,30 @@ func (m *TThreeD) MakeTriangle(p1 stl.Vec3, p2 stl.Vec3, p3 stl.Vec3) stl.Triang
 	}
 }
 
+// applyCuts returns a copy of the layer with values at or below CutBelow, or at or above CutAbove,
+// set to 1.0. 1.0 is the "no material" value of the layer pipeline (see layers.GetLayers), so both
+// cuts deliberately remove material in the same way.
+func (m *TThreeD) applyCuts(layer [][]float64) [][]float64 {
+	out := make([][]float64, len(layer))
+	for i := range layer {
+		out[i] = make([]float64, len(layer[i]))
+		for j, v := range layer[i] {
+			if v <= m.CutBelow || v >= m.CutAbove {
+				v = 1.0
+			}
+			out[i][j] = v
+		}
+	}
+	return out
+}
+
 // create a solid from the layer values
 func (m *TThreeD) GetSolidFromLayer(layer [][]float64, name string) stl.Solid {
 	solid := stl.Solid{
 		Name: name,
 	}
+	//the cuts are applied to a copy: layer is shared with the image pipeline and later runs
+	layer = m.applyCuts(layer)
 	width := len(layer)
 	height := len(layer[0])
 
@@ -84,12 +103,6 @@ func (m *TThreeD) GetSolidFromLayer(layer [][]float64, name string) stl.Solid {
 			firstPixel := (j == 0)
 			lastPixel := (j == (height - 1))
 			//fmt.Printf("pixel: %0.4f; cutabove: %0.4f\n", layer[i][j], m.CutAbove)
-			if layer[i][j] <= m.CutBelow {
-				layer[i][j] = 1.0
-			}
-			if layer[i][j] >= m.CutAbove {
-				layer[i][j] = 1.0
-			}
 
 			//first/last lines need special treatment to tie them into the bottom of the solid
 			if !firstPixel && (firstLine || lastLine) {

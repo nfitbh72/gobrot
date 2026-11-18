@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/nfitbh72/gobrot/pkg/fractals"
+	"reflect"
 	"testing"
 )
 
@@ -134,4 +135,33 @@ func TestCoordsHelpTextMatchesArgumentOrder(t *testing.T) {
 		}
 	}
 	t.Fatal("coords command not registered")
+}
+
+func TestLayersConfig(t *testing.T) {
+	got, err := layersConfig(nil)
+	if err != nil || !reflect.DeepEqual(got, [][]float64{{0, 1}}) {
+		t.Errorf("no breaks: %v, %v", got, err)
+	}
+	got, err = layersConfig([]float64{0.25, 0.5})
+	if err != nil || !reflect.DeepEqual(got, [][]float64{{0, 0.25}, {0.25, 0.5}, {0.5, 1}}) {
+		t.Errorf("two breaks: %v, %v", got, err)
+	}
+	for _, bad := range [][]float64{{1.0}, {0.9, 0.1}, {1.5}, {0.5, 0.5}, {0}, {-0.1}} {
+		if _, err := layersConfig(bad); err == nil {
+			t.Errorf("layersConfig(%v) accepted invalid breaks", bad)
+		}
+	}
+}
+
+func TestSetLayersRejectsInvalidAndKeepsConfig(t *testing.T) {
+	c := newTestCommands()
+	c.setLayers([]float64{1.0}) // used to panic on the following go
+	c.setLayers([]float64{0.9, 0.1})
+	if !reflect.DeepEqual(c.AppData.Layers.LayersConfig, [][]float64{{0, 1}}) {
+		t.Errorf("config changed: %v", c.AppData.Layers.LayersConfig)
+	}
+	c.setLayers([]float64{0.5})
+	if len(c.AppData.Layers.LayersConfig) != 2 {
+		t.Errorf("valid layers rejected: %v", c.AppData.Layers.LayersConfig)
+	}
 }

@@ -106,3 +106,17 @@ func approx(a, b float64) bool {
 	d := a - b
 	return d > -1e-9 && d < 1e-9
 }
+
+// an empty layer must be skipped: no panic and no empty file left behind
+func TestSaveImageSkipsEmptyLayer(t *testing.T) {
+	dir := t.TempDir()
+	layer, _ := testLayers()
+	m := &TImage{FilenameBase: dir + "/out", ColourProfile: &recordingProfile{}}
+	m.SaveImage([][][]float64{layer, {}}, nil, false, false)
+	if _, err := os.Stat(dir + "/out0.png"); err != nil {
+		t.Errorf("layer 0 not saved: %v", err)
+	}
+	if _, err := os.Stat(dir + "/out1.png"); err == nil {
+		t.Error("empty layer 1 left a file behind")
+	}
+}
