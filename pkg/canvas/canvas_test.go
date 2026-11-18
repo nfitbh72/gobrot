@@ -48,3 +48,18 @@ func TestRunCanvasShapeFollowsY(t *testing.T) {
 		}
 	}
 }
+
+// dome reaches 1.5 at the far corner; the output must stay within 0..1
+func TestRunOutputStaysInRange(t *testing.T) {
+	const w, h = 8, 8
+	in := gridOf(w, h, func(x, y int) float64 { return 0 })
+	c := &TCanvas{CanvasMethodName: "dome", MandelEffect: 0, InPixels: in}
+	c.Run(w, h, 100)
+	for x := range c.OutPixels {
+		for y, v := range c.OutPixels[x] {
+			if v < 0 || v > 1 {
+				t.Errorf("OutPixels[%d][%d] = %v out of range", x, y, v)
+			}
+		}
+	}
+}
