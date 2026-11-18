@@ -101,9 +101,13 @@ func TestDispatchUnknownCommandIsReported(t *testing.T) {
 func TestDispatchBlankLineIsQuiet(t *testing.T) {
 	c, _, _, _ := newTestCLI()
 	for _, line := range []string{"", "   "} {
-		out := captureStdout(t, func() { c.Dispatch(line) })
+		var handled bool
+		out := captureStdout(t, func() { handled = c.Dispatch(line) })
 		if out != "" {
 			t.Errorf("%q printed %q", line, out)
+		}
+		if !handled {
+			t.Errorf("%q returned false", line)
 		}
 	}
 }
