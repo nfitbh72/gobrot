@@ -1,13 +1,13 @@
 package main
 
 import (
-	"sync"
 	"github.com/nfitbh72/gobrot/pkg/bigfloat"
 	"github.com/nfitbh72/gobrot/pkg/canvas"
 	"github.com/nfitbh72/gobrot/pkg/fractals"
 	"github.com/nfitbh72/gobrot/pkg/images"
 	"github.com/nfitbh72/gobrot/pkg/layers"
 	"github.com/nfitbh72/gobrot/pkg/threed"
+	"sync"
 )
 
 type TAppData struct {

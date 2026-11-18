@@ -1,33 +1,33 @@
 package colourprofiles
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
-	"os"
 	"math"
-	"fmt"
+	"os"
 )
 
 type TGPT1 struct {
-    Filename string
-    Width int
-    Height int
-	Image *image.RGBA
+	Filename  string
+	Width     int
+	Height    int
+	Image     *image.RGBA
 	ColourMap []color.RGBA
-	MinValue uint16
-	MaxValue uint16
+	MinValue  uint16
+	MaxValue  uint16
 }
 
 func (m *TGPT1) Initialise(filename string, width int, height int) {
-    m.Filename = filename
-    m.Width = width
-    m.Height = height
-    m.Image = image.NewRGBA(image.Rect(0, 0, width, height))
+	m.Filename = filename
+	m.Width = width
+	m.Height = height
+	m.Image = image.NewRGBA(image.Rect(0, 0, width, height))
 	m.MinValue = uint16(0)
 	m.MaxValue = uint16(65535)
-	
-	minColor := color.RGBA{128, 64, 0, 255}     // RGBA values for minimum value
+
+	minColor := color.RGBA{128, 64, 0, 255}    // RGBA values for minimum value
 	maxColor := color.RGBA{255, 255, 172, 255} // RGBA values for maximum value
 
 	// Generate the color map
@@ -52,10 +52,9 @@ func (m TGPT1) createColorMap(minValue, maxValue uint16, minColor, maxColor colo
 	return colorMap
 }
 
-
 func (m *TGPT1) SetPixel(i int, j int, depth float64, isShadow bool, shadowDepth float64) {
 	depthColour := percentToUint(depth)
-    //shadowDepthColour := percentToUint(shadowDepth)
+	//shadowDepthColour := percentToUint(shadowDepth)
 
 	// Convert the value to a range between 0 and 1
 	normalizedValue := float64(depthColour) / float64(65535)
@@ -63,15 +62,15 @@ func (m *TGPT1) SetPixel(i int, j int, depth float64, isShadow bool, shadowDepth
 	// Apply sinusoidal transformations to create psychedelic effects
 	hue := math.Mod(normalizedValue+0.7, 1.0) // Shift the hue
 	saturation := 1.0                         // Set a constant saturation
-	value := 0.75                              // Set a constant value/brightness
+	value := 0.75                             // Set a constant value/brightness
 
 	//fmt.Println(shadowDepth)
-	if (isShadow) {
-		if (shadowDepth > depth) {
+	if isShadow {
+		if shadowDepth > depth {
 			//fmt.Print("<")
 			value = 0.5
 		}
-		if (shadowDepth < depth) {
+		if shadowDepth < depth {
 			//fmt.Print(">")
 			value = 1.0
 		}
@@ -81,19 +80,19 @@ func (m *TGPT1) SetPixel(i int, j int, depth float64, isShadow bool, shadowDepth
 	r, g, b := hsvToRGB(hue, saturation, value)
 
 	// Scale the RGB values to the range of 0-255
-    m.Image.Set(
-        i,
-        j,
-        color.RGBA{uint8(r * 255), uint8(g * 255), uint8(b * 255), 255},
-    )
+	m.Image.Set(
+		i,
+		j,
+		color.RGBA{uint8(r * 255), uint8(g * 255), uint8(b * 255), 255},
+	)
 }
 
 func (m TGPT1) SaveImage(file *os.File) {
-    err := png.Encode(file, m.Image)
-    if err != nil {
-        fmt.Println(err)
-        os.Exit(1)
-    }
+	err := png.Encode(file, m.Image)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
 
 func hsvToRGB(h, s, v float64) (float64, float64, float64) {

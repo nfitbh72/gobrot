@@ -5,10 +5,10 @@ import (
 	//"image/color"
 	//"image/png"
 	"fmt"
+	"github.com/nfitbh72/gobrot/pkg/colourprofiles"
 	"os"
 	"os/exec"
 	"strconv"
-	"github.com/nfitbh72/gobrot/pkg/colourprofiles"
 )
 
 type TImage struct {

@@ -2,12 +2,12 @@ package fractals
 
 import (
 	"fmt"
+	"github.com/nfitbh72/gobrot/pkg/bigfloat"
 	"math"
 	"math/big"
 	"math/cmplx"
 	"sync"
 	"time"
-	"github.com/nfitbh72/gobrot/pkg/bigfloat"
 )
 
 type fractalType int

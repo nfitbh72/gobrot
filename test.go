@@ -33,7 +33,6 @@ func (m TTestStruct2) GetMe() string {
 	return m.MyString
 }
 
-
 func testThis() {
 	wibble := "wibble"
 	wobble := "wobble"
@@ -81,13 +80,11 @@ func testThis() {
 	fmt.Println(t2.GetMe(), "compared with", wobble)
 	fmt.Println()
 
-	
 }
-
 
 // Loader defines a content loader
 type Loader interface {
-    load(src string) string
+	load(src string) string
 }
 
 // WebLoader is a web content loader
@@ -95,6 +92,5 @@ type WebLoader struct{}
 
 // load loads the content of a page
 func (w *WebLoader) load(src string) string {
-    return fmt.Sprintf("I loaded this page %s", src)
+	return fmt.Sprintf("I loaded this page %s", src)
 }
-
