@@ -31,7 +31,7 @@ func (m *TCommands) initialise(appData *TAppData) {
 	m.CLI.AddCommand("width", 1, 1, m.setWidth, "Sets the width in pixels of the output")
 	m.CLI.AddCommand("iterations", 1, 1, m.setMaxIterations, "Sets the maximum iterations of the mandelbrot algorithm")
 	m.CLI.AddCommand("cstr", 1, 1, m.setCanvasStrength, "Sets the strength of the canvas (compared to the fractal)")
-	m.CLI.AddCommand("coords", 4, 4, m.setCoords, "Sets the real-min, imaginary-min, real-max, imaginary-max values")
+	m.CLI.AddCommand("coords", 4, 4, m.setCoords, "Sets the real-min, real-max, imaginary-min, imaginary-max values")
 	m.CLI.AddCommand("config", 0, 0, m.showConfig, "Displays the configuration currently being used")
 	m.CLI.AddCommand("go", 0, 0, m.buildMandel, "Runs the algorithm, outputs the png(s)")
 	m.CLI.AddCommand("layers", 0, cli.Unlimited, m.setLayers, "If you want many pngs for different layers then specify percentages for which the layer breaks exist (do not include 0 or 100, these are assumed)")
@@ -58,7 +58,7 @@ func (m *TCommands) run() {
 }
 
 func (m *TCommands) big(arguments []int) {
-	m.AppData.Fractal.BF.Prec = uint(arguments[0])
+	m.AppData.Fractal.SetPrecision(uint(arguments[0]))
 	fmt.Println("big float precision set to:", m.AppData.Fractal.BF.Prec)
 }
 
@@ -296,13 +296,15 @@ func (m *TCommands) setStretch(arguments []string) {
 }
 
 func (m *TCommands) setFractalType(arguments []string) {
-	if arguments[0] == "mandel" {
+	switch arguments[0] {
+	case "mandel":
 		m.AppData.Fractal.FractalType = fractals.Mandel
-		fmt.Println("Fractal Type set to Mandel")
-	}
-	if arguments[0] == "bsjulia" {
+		fmt.Println("Fractal Type set to mandel")
+	case "bsjulia":
 		m.AppData.Fractal.FractalType = fractals.BSJulia
-		fmt.Println("Fractal Type set to Julia")
+		fmt.Println("Fractal Type set to bsjulia")
+	default:
+		fmt.Printf("unknown fractal type %q, expected \"mandel\" or \"bsjulia\"\n", arguments[0])
 	}
 
 }
