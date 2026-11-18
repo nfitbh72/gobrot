@@ -82,3 +82,27 @@ func TestShadowDepthPassedToProfile(t *testing.T) {
 		}
 	}
 }
+
+func TestStretchValuesRescalesDepthAndShadow(t *testing.T) {
+	layer, shadow := testLayers()
+	rec := &recordingProfile{}
+	m := &TImage{ColourProfile: rec}
+	// range 0.0..0.5 stretched to 0..1 means every value is doubled
+	m.GetImageFromLayer(layer, shadow, true, 0, 0.5, true)
+	for x := range layer {
+		for y := range layer[x] {
+			p := rec.calls[[2]int{x, rec.height - 1 - y}]
+			if want := layer[x][y] * 2; !approx(p.depth, want) {
+				t.Errorf("depth (%d,%d) = %v, want %v", x, y, p.depth, want)
+			}
+			if want := shadow[x][y] * 2; !approx(p.shadowDepth, want) {
+				t.Errorf("shadowDepth (%d,%d) = %v, want %v", x, y, p.shadowDepth, want)
+			}
+		}
+	}
+}
+
+func approx(a, b float64) bool {
+	d := a - b
+	return d > -1e-9 && d < 1e-9
+}
