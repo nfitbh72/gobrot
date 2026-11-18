@@ -1,7 +1,10 @@
 package cli
 
 import (
+	"io"
+	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -59,5 +62,78 @@ func TestDispatchUnlimitedAndExtraSpaces(t *testing.T) {
 	want := [][]string{{}, {"a", "b", "c"}}
 	if !reflect.DeepEqual(*strs, want) {
 		t.Errorf("strs = %v, want %v", *strs, want)
+	}
+}
+
+// captureStdout returns what f printed
+func captureStdout(t *testing.T, f func()) string {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := os.Stdout
+	os.Stdout = w
+	f()
+	os.Stdout = old
+	w.Close()
+	out, _ := io.ReadAll(r)
+	return string(out)
+}
+
+func TestDispatchUnknownCommandIsReported(t *testing.T) {
+	c, ints, _, _ := newTestCLI()
+	for _, line := range []string{"iteration 1000", "One 5", "witdh 500"} {
+		var handled bool
+		out := captureStdout(t, func() { handled = c.Dispatch(line) })
+		if handled {
+			t.Errorf("%q reported as handled", line)
+		}
+		if !strings.Contains(out, "unknown command") || !strings.Contains(out, "help") {
+			t.Errorf("%q: output %q lacks unknown-command message", line, out)
+		}
+	}
+	if len(*ints) != 0 {
+		t.Errorf("a callback ran: %v", *ints)
+	}
+}
+
+func TestDispatchBlankLineIsQuiet(t *testing.T) {
+	c, _, _, _ := newTestCLI()
+	for _, line := range []string{"", "   "} {
+		out := captureStdout(t, func() { c.Dispatch(line) })
+		if out != "" {
+			t.Errorf("%q printed %q", line, out)
+		}
+	}
+}
+
+func TestDispatchKnownCommandIsHandledEvenWithBadArguments(t *testing.T) {
+	c, _, _, _ := newTestCLI()
+	var handled bool
+	out := captureStdout(t, func() { handled = c.Dispatch("one") })
+	if !handled || strings.Contains(out, "unknown command") {
+		t.Errorf("handled=%v output=%q", handled, out)
+	}
+}
+
+func TestDispatchStopsAtFirstMatch(t *testing.T) {
+	var calls []string
+	c := &TCLI{}
+	c.AddCommand("dup", 0, 0, func(a []string) { calls = append(calls, "first") }, "")
+	c.AddCommand("dup", 0, 0, func(a []string) { calls = append(calls, "second") }, "")
+	c.Dispatch("dup")
+	if !reflect.DeepEqual(calls, []string{"first"}) {
+		t.Errorf("calls = %v, want only the first match", calls)
+	}
+}
+
+func TestDispatchTrailingJunkIsRefused(t *testing.T) {
+	c := &TCLI{}
+	ran := false
+	c.AddCommand("go", 0, 0, func(a []string) { ran = true }, "")
+	captureStdout(t, func() { c.Dispatch("go 42") })
+	if ran {
+		t.Error("go ran with trailing arguments")
 	}
 }
