@@ -69,9 +69,8 @@ func (canvas *TCanvas) Run(mWidth uint16, mHeight uint16, mMaxIterations uint) {
 			//get the 0 to 1 value of the map
 			canvasZ := canvasMethod(p)
 
-			if canvasZ < 0.0 || canvasZ > 1.0 {
-				fmt.Println(canvasZ, "out of range")
-			}
+			//some shapes (e.g. dome) exceed 1.0 at the corners, so clamp rather than carry on out of range
+			canvasZ = math.Max(0.0, math.Min(1.0, canvasZ))
 
 			//get the mandel component of the end result - e.g. 20% MandelEffect
 			mandelZ := canvas.InPixels[x][y] * canvas.MandelEffect
