@@ -37,10 +37,18 @@ func TestSetMaxIterationsRange(t *testing.T) {
 	}
 }
 
-// The commands from the issue that used to panic must now be refused.
-func TestMalformedCommandsDoNotPanic(t *testing.T) {
+// The commands from the issue that used to panic must now be refused,
+// leaving the configuration untouched.
+func TestMalformedCommandsAreRefused(t *testing.T) {
 	c := newTestCommands()
-	for _, line := range []string{"width", "ascii 80", "coords -2 2 -2", "width 1x", "help coords", "layers"} {
+	for _, line := range []string{"width", "width 1x", "width 100000", "height", "ascii 80", "coords -1 1 -1", "help coords"} {
 		c.CLI.Dispatch(line)
+	}
+	f := c.AppData.Fractal
+	if f.Width != 1024 || f.Height != 1024 {
+		t.Errorf("size changed to %dx%d", f.Width, f.Height)
+	}
+	if minX, _ := f.MinX.Float64(); minX != -2 {
+		t.Errorf("coords changed: MinX = %v", minX)
 	}
 }
