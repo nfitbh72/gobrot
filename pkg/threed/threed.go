@@ -2,8 +2,8 @@ package threed
 
 import (
 	"fmt"
-	"math/rand"
 	"github.com/hschendel/stl"
+	"math/rand"
 	"strconv"
 )
 
