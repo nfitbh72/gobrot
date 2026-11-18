@@ -210,29 +210,31 @@ func (m *TCommands) loadXml(xml string) {
 	m.threeD([]string{})
 }
 
-func (m *TCommands) setLayers(arguments []float64) {
-	if len(arguments) < 1 {
-		m.AppData.Layers.LayersConfig = make([][]float64, 1)
-		m.AppData.Layers.LayersConfig[0] = make([]float64, 2)
-		m.AppData.Layers.LayersConfig[0][0] = 0.0
-		m.AppData.Layers.LayersConfig[0][1] = 1.0
-	} else {
-		m.AppData.Layers.LayersConfig = make([][]float64, len(arguments)+1)
-		for i := range m.AppData.Layers.LayersConfig {
-			m.AppData.Layers.LayersConfig[i] = make([]float64, 2)
+// layersConfig turns layer break points (fractions strictly between 0 and 1, ascending)
+// into [min, max] bands covering 0 to 1
+func layersConfig(breaks []float64) ([][]float64, error) {
+	prev := 0.0
+	for _, b := range breaks {
+		if !(b > prev && b < 1.0) {
+			return nil, fmt.Errorf("layer break points must be strictly ascending and between 0 and 1 (exclusive), got %v", breaks)
 		}
-		m.AppData.Layers.LayersConfig[0][0] = 0.0
-		count := 0
-		for _, layerValue := range arguments {
-			fmt.Println(layerValue)
-
-			m.AppData.Layers.LayersConfig[count][1] = layerValue
-			m.AppData.Layers.LayersConfig[count+1][0] = layerValue
-			count++
-
-		}
-		m.AppData.Layers.LayersConfig[count][1] = 1.0
+		prev = b
 	}
+	edges := append(append([]float64{0.0}, breaks...), 1.0)
+	config := make([][]float64, len(edges)-1)
+	for i := range config {
+		config[i] = []float64{edges[i], edges[i+1]}
+	}
+	return config, nil
+}
+
+func (m *TCommands) setLayers(arguments []float64) {
+	config, err := layersConfig(arguments)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	m.AppData.Layers.LayersConfig = config
 	fmt.Println("layers set", m.AppData.Layers.LayersConfig)
 }
 

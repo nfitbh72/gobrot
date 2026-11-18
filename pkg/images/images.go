@@ -83,6 +83,10 @@ func (m *TImage) SaveImage(layers [][][]float64, shadowLayers [][][]float64, isS
 			shadowLayer = shadowLayers[n]
 		}
 		image := m.GetImageFromLayer(layer, shadowLayer, isShadow, minVal, maxVal, stretchValues)
+		if image == nil {
+			fmt.Println("layer", n, "is empty, skipping")
+			continue
+		}
 		filename := m.FilenameBase + strconv.Itoa(n) + ".png"
 		fmt.Println("saving", filename)
 		out, err := os.Create(filename)
@@ -131,6 +135,9 @@ func (m *TImage) GetImageFromLayer(
 	layer [][]float64, shadowLayer [][]float64, isShadow bool, minVal float64, maxVal float64, stretchValues bool,
 ) colourprofiles.IColourProfile {
 
+	if len(layer) == 0 {
+		return nil
+	}
 	width := len(layer)
 	height := len(layer[0])
 
