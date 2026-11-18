@@ -52,3 +52,24 @@ func TestMalformedCommandsAreRefused(t *testing.T) {
 		t.Errorf("coords changed: MinX = %v", minX)
 	}
 }
+
+// cstr must survive the canvas command rebuilding the canvas
+func TestCanvasKeepsConfiguredStrength(t *testing.T) {
+	c := newTestCommands()
+	c.setCanvasStrength([]float64{0.4})
+	c.prepareCanvas([]string{"dome"})
+	if got := c.AppData.Canvas.MandelEffect; got != 0.6 {
+		t.Errorf("MandelEffect = %v after cstr 0.4, want 0.6", got)
+	}
+	if c.AppData.Canvas.CanvasMethodName != "dome" {
+		t.Errorf("method = %q", c.AppData.Canvas.CanvasMethodName)
+	}
+}
+
+func TestCanvasDefaultStrengthWithoutCstr(t *testing.T) {
+	c := newTestCommands()
+	c.prepareCanvas(nil)
+	if got := c.AppData.Canvas.MandelEffect; got != 0.1 {
+		t.Errorf("default MandelEffect = %v, want 0.1", got)
+	}
+}

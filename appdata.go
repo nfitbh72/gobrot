@@ -75,6 +75,9 @@ func (appData *TAppData) initialise() {
 		CutBelow:     0.0,
 		CutAbove:     1.0,
 	}
+	//default config for the canvas: 10% fractal, 90% canvas shape
+	appData.Canvas = canvas.TCanvas{MandelEffect: 0.1}
+
 	//whether to create the shadow mandel plot
 	appData.IsShadowGenerated = false
 
