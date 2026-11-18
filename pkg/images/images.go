@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"wilf/gobrot/pkg/colourprofiles"
+	"github.com/nfitbh72/gobrot/pkg/colourprofiles"
 )
 
 type TImage struct {

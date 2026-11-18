@@ -22,14 +22,21 @@ precision allows.
 ## Requirements
 
 - Go 1.20+
-- An `stl` package available on the import path. `pkg/threed` imports it as plain `"stl"`
-  (not a module path), so it must be installed under `$GOROOT/src/stl` or otherwise
-  resolvable before the project will build.
+
+Dependencies are managed with Go modules and download automatically on first build.
+STL output uses [`github.com/hschendel/stl`](https://github.com/hschendel/stl), pinned to
+v1.0.4 (v1.0.5 needs a newer Go toolchain).
 
 ## Building
 
 ```powershell
 go build -o GoBrot.exe .
+```
+
+Or install it straight from GitHub:
+
+```powershell
+go install github.com/nfitbh72/gobrot@latest
 ```
 
 Or use `run.bat`, which builds each package, installs the binary to `%GOPATH%\bin` and starts it.

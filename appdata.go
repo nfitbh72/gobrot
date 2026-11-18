@@ -2,12 +2,12 @@ package main
 
 import (
 	"sync"
-	"wilf/gobrot/pkg/bigfloat"
-	"wilf/gobrot/pkg/canvas"
-	"wilf/gobrot/pkg/fractals"
-	"wilf/gobrot/pkg/images"
-	"wilf/gobrot/pkg/layers"
-	"wilf/gobrot/pkg/threed"
+	"github.com/nfitbh72/gobrot/pkg/bigfloat"
+	"github.com/nfitbh72/gobrot/pkg/canvas"
+	"github.com/nfitbh72/gobrot/pkg/fractals"
+	"github.com/nfitbh72/gobrot/pkg/images"
+	"github.com/nfitbh72/gobrot/pkg/layers"
+	"github.com/nfitbh72/gobrot/pkg/threed"
 )
 
 type TAppData struct {

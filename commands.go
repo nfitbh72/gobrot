@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"wilf/gobrot/pkg/canvas"
-	"wilf/gobrot/pkg/cli"
-	"wilf/gobrot/pkg/fractals"
-	"wilf/gobrot/pkg/shapes"
-	"wilf/gobrot/pkg/usage"
-	fractalxml "wilf/gobrot/pkg/xml"
+	"github.com/nfitbh72/gobrot/pkg/canvas"
+	"github.com/nfitbh72/gobrot/pkg/cli"
+	"github.com/nfitbh72/gobrot/pkg/fractals"
+	"github.com/nfitbh72/gobrot/pkg/shapes"
+	"github.com/nfitbh72/gobrot/pkg/usage"
+	fractalxml "github.com/nfitbh72/gobrot/pkg/xml"
 )
 
 type TCommands struct {

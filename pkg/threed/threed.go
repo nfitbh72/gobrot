@@ -3,7 +3,7 @@ package threed
 import (
 	"fmt"
 	"math/rand"
-	"stl"
+	"github.com/hschendel/stl"
 	"strconv"
 )
 

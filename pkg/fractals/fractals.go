@@ -7,7 +7,7 @@ import (
 	"math/cmplx"
 	"sync"
 	"time"
-	"wilf/gobrot/pkg/bigfloat"
+	"github.com/nfitbh72/gobrot/pkg/bigfloat"
 )
 
 type fractalType int
