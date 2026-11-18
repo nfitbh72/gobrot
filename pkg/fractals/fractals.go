@@ -29,19 +29,36 @@ type TFractal struct {
 	MaxX          *big.Float
 	MaxY          *big.Float
 	BF            *bigfloat.TBigFloats
+	//the bounds as typed, kept so they can be re-parsed when the precision changes
+	boundStrings [4]string
 }
 
 // Sets the bounds of the fractal from string floats into big floats
 func (m *TFractal) SetBounds(minx string, maxx string, miny string, maxy string) {
-	m.MinX = m.BF.NewBigS(minx)
-	m.MaxX = m.BF.NewBigS(maxx)
-	m.MinY = m.BF.NewBigS(miny)
-	m.MaxY = m.BF.NewBigS(maxy)
-
+	m.parseBounds(minx, maxx, miny, maxy)
 	diffX := m.BF.SubBig(m.MaxX, m.MinX)
 	diffY := m.BF.SubBig(m.MaxY, m.MinY)
 
 	fmt.Printf("floats: %v %v %v %v %v %v\n", m.MinX, m.MaxX, m.MinY, m.MaxY, diffX, diffY)
+}
+
+// parseBounds stores the bound strings and parses them at the current precision
+func (m *TFractal) parseBounds(minx string, maxx string, miny string, maxy string) {
+	m.boundStrings = [4]string{minx, maxx, miny, maxy}
+	m.MinX = m.BF.NewBigS(minx)
+	m.MaxX = m.BF.NewBigS(maxx)
+	m.MinY = m.BF.NewBigS(miny)
+	m.MaxY = m.BF.NewBigS(maxy)
+}
+
+// SetPrecision changes the big float precision and re-parses the stored bounds at the new
+// precision, so coords set before big are not left at the old one
+func (m *TFractal) SetPrecision(prec uint) {
+	m.BF.Prec = prec
+	if m.boundStrings != [4]string{} {
+		b := m.boundStrings
+		m.parseBounds(b[0], b[1], b[2], b[3])
+	}
 }
 
 // gets the (real or imaginary) coordinate from the x or y location

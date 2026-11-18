@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/nfitbh72/gobrot/pkg/fractals"
 	"reflect"
 	"testing"
 )
@@ -91,6 +92,49 @@ func TestPrepareCanvasClearsStaleOutput(t *testing.T) {
 	if c.AppData.Canvas.OutPixels != nil {
 		t.Errorf("stale OutPixels from previous run: %v", c.AppData.Canvas.OutPixels)
 	}
+}
+
+func TestBigAppliesToAlreadySetBounds(t *testing.T) {
+	c := newTestCommands()
+	c.setCoords([]string{"-0.7436447860", "-0.7436447859", "0.1318252536", "0.1318252537"})
+	c.big([]int{100})
+	f := c.AppData.Fractal
+	for name, b := range map[string]interface{ Prec() uint }{"MinX": f.MinX, "MaxX": f.MaxX, "MinY": f.MinY, "MaxY": f.MaxY} {
+		if b.Prec() != 100 {
+			t.Errorf("%s precision = %d after big 100, want 100", name, b.Prec())
+		}
+	}
+	// the original decimal text is re-parsed, not widened from the 53-bit value
+	if got := f.MinX.Text('g', 25); got != "-0.743644786" {
+		t.Errorf("MinX = %s", got)
+	}
+}
+
+func TestSetFractalTypeUnknownKeepsCurrent(t *testing.T) {
+	c := newTestCommands()
+	c.setFractalType([]string{"bsjulia"})
+	c.setFractalType([]string{"foo"})
+	if c.AppData.Fractal.FractalType != fractals.BSJulia {
+		t.Errorf("unknown type changed FractalType to %v", c.AppData.Fractal.FractalType)
+	}
+	c.setFractalType([]string{"mandel"})
+	if c.AppData.Fractal.FractalType != fractals.Mandel {
+		t.Errorf("mandel not applied")
+	}
+}
+
+func TestCoordsHelpTextMatchesArgumentOrder(t *testing.T) {
+	c := newTestCommands()
+	for _, cmd := range c.CLI.Commands {
+		if cmd.Keyword == "coords" {
+			want := "Sets the real-min, real-max, imaginary-min, imaginary-max values"
+			if len(cmd.HelpText) != 1 || cmd.HelpText[0] != want {
+				t.Errorf("coords help = %v, want %q", cmd.HelpText, want)
+			}
+			return
+		}
+	}
+	t.Fatal("coords command not registered")
 }
 
 func TestLayersConfig(t *testing.T) {
