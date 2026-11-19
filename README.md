@@ -74,6 +74,9 @@ Type `help` for the list of commands, or `help <command>` for details on one.
 | `big` | `<int>` | Big-float precision in bits (default 53) |
 | `fname` | `<string>` | Base filename for PNG output (default `./out`) |
 | `cp` | `gray` \| `gray2` \| `cycle` \| `gpt1` | Colour profile (default `gray2`) |
+| `smooth` | `on` \| `off` | Fractional escape times instead of whole iterations |
+| `supersample` | `<int>` | Render at n times the size and average down (1–16, default off) |
+| `heightcurve` | `<float>` | Log curve `k` for 3D heights, 0 is linear (default 0) |
 | `stretch` | `on` \| `off` | Stretch values across the full colour range |
 | `shadow` | `on` \| `off` | Also generate a shadow fractal |
 | `layers` | `<float> ...` | Layer break points between 0 and 1, e.g. `layers 0.25 0.5 0.75` |
