@@ -37,3 +37,17 @@ func TestGetSolidFromLayerIsRepeatable(t *testing.T) {
 		t.Errorf("cuts had no effect: %d triangles either way", len(first.Triangles))
 	}
 }
+
+func TestGetSolidFromLayerIsDeterministicWithZeroAttributes(t *testing.T) {
+	m := &TThreeD{Scale: 1, DepthScale: 1, CutAbove: 1}
+	a := m.GetSolidFromLayer(testLayer(), "a")
+	b := m.GetSolidFromLayer(testLayer(), "a")
+	if !reflect.DeepEqual(a.Triangles, b.Triangles) {
+		t.Error("identical input gave different triangles")
+	}
+	for i, tr := range a.Triangles {
+		if tr.Attributes != 0 {
+			t.Fatalf("triangle %d has attribute %d, want 0", i, tr.Attributes)
+		}
+	}
+}
