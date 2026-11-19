@@ -199,10 +199,15 @@ func (clinterface *TCLI) Run() {
 
 }
 
-// Dispatch runs every command whose keyword starts the line. The arguments are
+// Dispatch runs the first command whose keyword starts the line. The arguments are
 // checked against the command's min/max count and parsed for the callback's
 // type; if either fails a message is printed and the callback is not called.
-func (clinterface *TCLI) Dispatch(line string) {
+// It returns false, after printing a message, when the line is not a known command;
+// a blank line is ignored and counts as handled.
+func (clinterface *TCLI) Dispatch(line string) bool {
+	if strings.TrimSpace(line) == "" {
+		return true
+	}
 	for _, command := range clinterface.Commands {
 		if !clinterface.doesCommandMatch(line, command.Keyword) {
 			continue
@@ -212,7 +217,7 @@ func (clinterface *TCLI) Dispatch(line string) {
 			(command.MaxArguments != Unlimited && len(tokens) > int(command.MaxArguments)) {
 			fmt.Println("wrong number of arguments for", command.Keyword)
 			fmt.Println("usage:", usage(command))
-			continue
+			return true
 		}
 		//depending on the type of the argument of the callback function,
 		//we format string, int or float64 differently
@@ -248,7 +253,10 @@ func (clinterface *TCLI) Dispatch(line string) {
 				command.Callback.(func([]float64))(args)
 			}
 		}
+		return true
 	}
+	fmt.Printf("unknown command: %q - type 'help' for the list of commands\n", strings.Fields(line)[0])
+	return false
 }
 
 // usage describes how many arguments a command takes
