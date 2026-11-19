@@ -75,7 +75,80 @@ func (m *TThreeD) applyCuts(layer [][]float64) [][]float64 {
 	return out
 }
 
-// create a solid from the layer values
+// A cell is the square of grid points (i-1,j-1) (i,j-1) (i-1,j) (i,j), numbered 0..3 in that order.
+// Each cell is split into two roof triangles along one diagonal, alternating with (i+j) parity, as
+// seen from above:
+//
+//	x-x-x
+//	|/|\|
+//	x-x-x
+//	|\|/|
+//	x-x-x
+//
+// cellTriangles lists each roof triangle's corners in counter-clockwise order (normal pointing up)
+// for [parity][triangle].
+var cellTriangles = [2][2][3]int{
+	{{1, 2, 0}, {2, 1, 3}},
+	{{3, 0, 1}, {0, 3, 2}},
+}
+
+// cellCorner is the (i, j) offset of corner n from the cell's first corner (i-1, j-1).
+var cellCorner = [4][2]int{{0, 0}, {1, 0}, {0, 1}, {1, 1}}
+
+// cellSide identifies which side of a cell an edge between two corners lies on, or sideDiagonal
+// for the diagonal shared by the cell's own two triangles.
+const (
+	sideJMinus = iota // corners 0-1, towards j-1
+	sideJPlus         // corners 2-3, towards j+1
+	sideIMinus        // corners 0-2, towards i-1
+	sideIPlus         // corners 1-3, towards i+1
+	sideDiagonal
+)
+
+func cellSide(a, b int) int {
+	if a > b {
+		a, b = b, a
+	}
+	switch [2]int{a, b} {
+	case [2]int{0, 1}:
+		return sideJMinus
+	case [2]int{2, 3}:
+		return sideJPlus
+	case [2]int{0, 2}:
+		return sideIMinus
+	case [2]int{1, 3}:
+		return sideIPlus
+	}
+	return sideDiagonal
+}
+
+// oppositeSide is the side of the neighbouring cell that touches a given side.
+var oppositeSide = [4]int{sideJPlus, sideJMinus, sideIPlus, sideIMinus}
+
+// sideOwner[parity][side] is which of a cell's two triangles (0 or 1) owns the given outer side.
+var sideOwner = func() (owner [2][4]int) {
+	for parity := 0; parity < 2; parity++ {
+		for t := 0; t < 2; t++ {
+			c := cellTriangles[parity][t]
+			for k := 0; k < 3; k++ {
+				if side := cellSide(c[k], c[(k+1)%3]); side != sideDiagonal {
+					owner[parity][side] = t
+				}
+			}
+		}
+	}
+	return
+}()
+
+// create a solid from the layer values.
+//
+// The solid is a heightmap slab: a roof triangulating the layer, a mirrored base at z = 0 and walls
+// joining them. Grid points with a depth of 0 (empty, e.g. cut material with InverseDepth) carry no
+// material, so a roof triangle is only solid if all three of its points are non-empty. Points where
+// two filled regions would touch at a single point are emptied as well, so the result is a valid solid. Solid
+// triangles get a base triangle, and a wall wherever a solid triangle borders an empty one or the
+// edge of the layer. The result has no zero-area triangles and every edge is shared by exactly two
+// triangles with opposite winding.
 func (m *TThreeD) GetSolidFromLayer(layer [][]float64, name string) stl.Solid {
 	solid := stl.Solid{
 		Name: name,
@@ -85,137 +158,142 @@ func (m *TThreeD) GetSolidFromLayer(layer [][]float64, name string) stl.Solid {
 	width := len(layer)
 	height := len(layer[0])
 
-	//4 vectors
-	p1 := stl.Vec3{0, 0, 0}
-	p2 := stl.Vec3{0, 0, 0}
-	p3 := stl.Vec3{0, 0, 0}
-	p4 := stl.Vec3{0, 0, 0}
+	roof := func(i, j int) stl.Vec3 {
+		return m.MakeVector(i, j, width, height, layer[i][j], m.InverseDepth)
+	}
+	floor := func(i, j int) stl.Vec3 {
+		return m.MakeVector(i, j, width, height, 0.0, false)
+	}
+	corner := func(i, j, n int) (int, int) {
+		return i - 1 + cellCorner[n][0], j - 1 + cellCorner[n][1]
+	}
 
-	numTriangles := 0
-
-	//for all lines
-	for i := 0; i < width; i++ {
-		firstLine := (i == 0)
-		lastLine := (i == (width - 1))
-		//for all pixels
-		for j := 0; j < height; j++ {
-			firstPixel := (j == 0)
-			lastPixel := (j == (height - 1))
-			//fmt.Printf("pixel: %0.4f; cutabove: %0.4f\n", layer[i][j], m.CutAbove)
-
-			//first/last lines need special treatment to tie them into the bottom of the solid
-			if !firstPixel && (firstLine || lastLine) {
-				p1 = m.MakeVector(i, j-1, width, height, layer[i][j-1], m.InverseDepth)
-				p2 = m.MakeVector(i, j, width, height, layer[i][j], m.InverseDepth)
-				p3 = m.MakeVector(i, j-1, width, height, 0.0, false)
-				p4 = m.MakeVector(i, j, width, height, 0.0, false)
-				if firstLine {
-					solid.AppendTriangle(m.MakeTriangle(p1, p3, p2))
-					solid.AppendTriangle(m.MakeTriangle(p3, p4, p2))
-				} else {
-					solid.AppendTriangle(m.MakeTriangle(p3, p1, p2))
-					solid.AppendTriangle(m.MakeTriangle(p4, p3, p2))
-				}
-			}
-			//first/last pixels need special treatment to tie them into the bottom of the solid
-			if !firstLine && (firstPixel || lastPixel) {
-				p1 = m.MakeVector(i-1, j, width, height, layer[i-1][j], m.InverseDepth)
-				p2 = m.MakeVector(i, j, width, height, layer[i][j], m.InverseDepth)
-				p3 = m.MakeVector(i-1, j, width, height, 0.0, false)
-				p4 = m.MakeVector(i, j, width, height, 0.0, false)
-				if firstPixel {
-					solid.AppendTriangle(m.MakeTriangle(p3, p1, p2))
-					solid.AppendTriangle(m.MakeTriangle(p4, p3, p2))
-				} else {
-					solid.AppendTriangle(m.MakeTriangle(p1, p3, p2))
-					solid.AppendTriangle(m.MakeTriangle(p3, p4, p2))
-
-				}
-			}
-			//only if not first row/column
-			if !firstLine && !firstPixel {
-				//these are the "roof" of our solid
-				//get 4 points (i-1,j-1, i-1,j, i,j-1 and i,j)
-				p1 = m.MakeVector(i-1, j-1, width, height, layer[i-1][j-1], m.InverseDepth)
-				p2 = m.MakeVector(i, j-1, width, height, layer[i][j-1], m.InverseDepth)
-				p3 = m.MakeVector(i-1, j, width, height, layer[i-1][j], m.InverseDepth)
-				p4 = m.MakeVector(i, j, width, height, layer[i][j], m.InverseDepth)
-
-				var t1 stl.Triangle
-				var t2 stl.Triangle
-				//triangle composition alternates between diagonals... as seen from above:
-				// x-x-x
-				// |/|\|
-				// x-x-x
-				// |\|/|
-				// x-x-x
-				if (i+j)%2 == 0 {
-					t1 = m.MakeTriangle(p2, p1, p3)
-					t2 = m.MakeTriangle(p3, p4, p2)
-				} else {
-					t1 = m.MakeTriangle(p4, p2, p1)
-					t2 = m.MakeTriangle(p1, p3, p4)
-				}
-				drawT1 := false
-				drawT2 := false
-
-				//append the 2 triangles
-				if p1[2] != 0.0 || p2[2] != 0.0 || p3[2] != 0.0 {
-					drawT1 = true
-					solid.AppendTriangle(t1)
-					numTriangles++
-				}
-				if p4[2] != 0.0 || p2[2] != 0.0 || p3[2] != 0.0 {
-					drawT2 = true
-					solid.AppendTriangle(t2)
-					numTriangles++
-				}
-
-				//these are the base of the solid - same coords as the roof triangles except with their depth set to 0
-				p1 = m.MakeVector(i-1, j-1, width, height, 0.0, false)
-				p2 = m.MakeVector(i, j-1, width, height, 0.0, false)
-				p3 = m.MakeVector(i-1, j, width, height, 0.0, false)
-				p4 = m.MakeVector(i, j, width, height, 0.0, false)
-
-				if (i+j)%2 == 0 {
-					t1 = m.MakeTriangle(p1, p2, p3)
-					t2 = m.MakeTriangle(p4, p3, p2)
-				} else {
-					t1 = m.MakeTriangle(p2, p4, p1)
-					t2 = m.MakeTriangle(p3, p1, p4)
-				}
-				//append the 2 triangles
-				if drawT1 {
-					solid.AppendTriangle(t1)
-				}
-				if drawT2 {
-					solid.AppendTriangle(t2)
+	//which triangles hold material? Triangles with an empty point do not
+	empty := make([][]bool, width)
+	filled := make([][][2]bool, width)
+	for i := range empty {
+		empty[i] = make([]bool, height)
+		filled[i] = make([][2]bool, height)
+		for j := range empty[i] {
+			empty[i][j] = roof(i, j)[2] == 0.0
+		}
+	}
+	refill := func() {
+		for i := 1; i < width; i++ {
+			for j := 1; j < height; j++ {
+				for t := 0; t < 2; t++ {
+					filled[i][j][t] = true
+					for _, n := range cellTriangles[(i+j)%2][t] {
+						ci, cj := corner(i, j, n)
+						if empty[ci][cj] {
+							filled[i][j][t] = false
+						}
+					}
 				}
 			}
 		}
 	}
-	fmt.Println("Created", numTriangles, " triangles")
+
+	//is the triangle on the far side of an edge filled?
+	neighbourFilled := func(i, j, t, side int) bool {
+		switch side {
+		case sideDiagonal:
+			return filled[i][j][1-t]
+		case sideJMinus:
+			j--
+		case sideJPlus:
+			j++
+		case sideIMinus:
+			i--
+		case sideIPlus:
+			i++
+		}
+		if i < 1 || i >= width || j < 1 || j >= height {
+			return false
+		}
+		return filled[i][j][sideOwner[(i+j)%2][oppositeSide[side]]]
+	}
+
+	//two filled regions touching at a single point would put four walls on one vertical edge, which
+	//is not a valid solid. Such a point has more than 2 wall edges meeting at it (a normal point has
+	//0 or 2), so empty those points too until none are left.
+	refill()
+	for {
+		walls := make([][]uint8, width)
+		for i := range walls {
+			walls[i] = make([]uint8, height)
+		}
+		for i := 1; i < width; i++ {
+			for j := 1; j < height; j++ {
+				for t := 0; t < 2; t++ {
+					if !filled[i][j][t] {
+						continue
+					}
+					c := cellTriangles[(i+j)%2][t]
+					for k := 0; k < 3; k++ {
+						if !neighbourFilled(i, j, t, cellSide(c[k], c[(k+1)%3])) {
+							for _, n := range [2]int{c[k], c[(k+1)%3]} {
+								ci, cj := corner(i, j, n)
+								walls[ci][cj]++
+							}
+						}
+					}
+				}
+			}
+		}
+		changed := false
+		for i := range walls {
+			for j := range walls[i] {
+				if walls[i][j] > 2 {
+					empty[i][j] = true
+					changed = true
+				}
+			}
+		}
+		if !changed {
+			break
+		}
+		refill()
+	}
+
+	//pass 2: emit the geometry. add takes corners in counter-clockwise order (MakeTriangle reverses them)
+	add := func(a, b, c stl.Vec3) {
+		solid.AppendTriangle(m.MakeTriangle(a, c, b))
+	}
+	numTriangles := 0
+	for i := 1; i < width; i++ {
+		for j := 1; j < height; j++ {
+			parity := (i + j) % 2
+			for t := 0; t < 2; t++ {
+				if !filled[i][j][t] {
+					continue
+				}
+				c := cellTriangles[parity][t]
+				var ci, cj [3]int
+				for k := 0; k < 3; k++ {
+					ci[k], cj[k] = corner(i, j, c[k])
+				}
+				add(roof(ci[0], cj[0]), roof(ci[1], cj[1]), roof(ci[2], cj[2]))
+				add(floor(ci[0], cj[0]), floor(ci[2], cj[2]), floor(ci[1], cj[1]))
+				numTriangles++
+				//walls on every edge with no filled triangle behind it
+				for k := 0; k < 3; k++ {
+					x, y := k, (k+1)%3
+					if neighbourFilled(i, j, t, cellSide(c[x], c[y])) {
+						continue
+					}
+					add(roof(ci[y], cj[y]), roof(ci[x], cj[x]), floor(ci[x], cj[x]))
+					add(roof(ci[y], cj[y]), floor(ci[x], cj[x]), floor(ci[y], cj[y]))
+				}
+			}
+		}
+	}
+	fmt.Println("Created", numTriangles, " roof triangles")
 
 	//we didnt add any normals to the triangles as we created them, so get the package to do the work
 	solid.RecalculateNormals()
 
 	fmt.Println("Added normals")
-
-	//validate() takes 30 secs and doesn't fix anything - only worth validating if we're gonna do something about it
-	//errors := solid.Validate()
-	/*
-		for key, error := range errors {
-			fmt.Println(key, "has a problem", error.HasEqualVertices, error.NormalDoesNotMatch, len(error.EdgeErrors))
-			if (len(error.EdgeErrors) > 0) {
-				vs := solid.Triangles[key].Vertices
-				fmt.Println(error.EdgeErrors[0], "0->1: ", vs[0], "to", vs[1])
-				fmt.Println(error.EdgeErrors[1], "1->2: ", vs[1], "to", vs[2])
-				fmt.Println(error.EdgeErrors[2], "2->0: ", vs[2], "to", vs[0])
-			}
-		}
-	*/
-
-	//fmt.Println("Solid has", len(errors), "validation errors")
 
 	//return the solid
 	return solid
