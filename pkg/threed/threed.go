@@ -3,7 +3,6 @@ package threed
 import (
 	"fmt"
 	"github.com/hschendel/stl"
-	"math/rand"
 	"strconv"
 )
 
@@ -55,7 +54,7 @@ func (m *TThreeD) MakeVector(i int, j int, width int, height int, depth float64,
 func (m *TThreeD) MakeTriangle(p1 stl.Vec3, p2 stl.Vec3, p3 stl.Vec3) stl.Triangle {
 	return stl.Triangle{
 		Vertices:   [3]stl.Vec3{p1, p3, p2},
-		Attributes: uint16(rand.Intn(65535)),
+		Attributes: 0,
 	}
 }
 
