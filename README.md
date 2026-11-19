@@ -75,7 +75,7 @@ Type `help` for the list of commands, or `help <command>` for details on one.
 | `fname` | `<string>` | Base filename for PNG output (default `./out`) |
 | `cp` | `gray` \| `gray2` \| `cycle` \| `gpt1` | Colour profile (default `gray2`) |
 | `smooth` | `on` \| `off` | Fractional escape times instead of whole iterations |
-| `supersample` | `<int>` | Render at n times the size and average down (1–16, default off) |
+| `supersample` | `<int>` | Render at n times the size and average down (1–16, default off; at most 100 million samples, about 800 MB) |
 | `heightcurve` | `<float>` | Log curve `k` for 3D heights, 0 is linear (default 0) |
 | `stretch` | `on` \| `off` | Stretch values across the full colour range |
 | `shadow` | `on` \| `off` | Also generate a shadow fractal |

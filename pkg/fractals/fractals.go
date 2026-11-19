@@ -95,6 +95,10 @@ func centre(minX, maxX, minY, maxY float64) complex128 {
 	return complex((minX+maxX)/2.0, (minY+maxY)/2.0)
 }
 
+// maxSupersamples limits width x height x n squared, as the supersampled grid is 8 bytes per sample.
+// It is a variable so a test can lower it.
+var maxSupersamples = 100_000_000
+
 // GetFractal computes the fractal, supersampled if Supersample is more than 1: it is rendered at
 // that many times the size and each block of samples averaged into one pixel, so a pixel straddling
 // a filament gets a blend of the samples under it rather than whichever one landed at its corner.
@@ -106,6 +110,10 @@ func (m *TFractal) GetFractal() [][]float64 {
 	}
 	if int(m.Width)*s > math.MaxUint16 || int(m.Height)*s > math.MaxUint16 {
 		fmt.Printf("supersample %d makes the image larger than %d pixels, rendering without it\n", s, math.MaxUint16)
+		return m.computeFractal()
+	}
+	if samples := int(m.Width) * int(m.Height) * s * s; samples > maxSupersamples {
+		fmt.Printf("supersample %d needs %d samples, more than the limit of %d, rendering without it\n", s, samples, maxSupersamples)
 		return m.computeFractal()
 	}
 	hi := *m
@@ -252,7 +260,8 @@ func (m *TFractal) escapeValue(i uint, abs2 float64) float64 {
 	}
 	v := n / float64(m.MaxIterations)
 	//1.0 is reserved for points that never escape
-	return math.Min(v, math.Nextafter(1.0, 0.0))
+	//a point far outside the set can smooth to below 0, which would fall outside every layer band
+	return math.Max(0.0, math.Min(v, math.Nextafter(1.0, 0.0)))
 }
 
 func (m *TFractal) squareBigFloat(vreal *big.Float, vimag *big.Float) (*big.Float, *big.Float) {
