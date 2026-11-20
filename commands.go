@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/nfitbh72/gobrot/pkg/cli"
 	"github.com/nfitbh72/gobrot/pkg/fractals"
+	"github.com/nfitbh72/gobrot/pkg/layers"
 	"github.com/nfitbh72/gobrot/pkg/shapes"
 	"github.com/nfitbh72/gobrot/pkg/usage"
 	fractalxml "github.com/nfitbh72/gobrot/pkg/xml"
@@ -46,6 +47,9 @@ func (m *TCommands) initialise(appData *TAppData) {
 	m.CLI.AddCommand("usage", 0, 0, m.usage, "Reports on memory usage")
 	m.CLI.AddCommand("cp", 1, 1, m.setColourProfile, "Sets the colour profile to use")
 	m.CLI.AddCommand("shadow", 1, 1, m.setShadow, "Sets whether shadows are used with on / off argument")
+	m.CLI.AddCommand("smooth", 1, 1, m.setSmooth, "Sets whether escape times are smoothed into fractions with an on / off argument")
+	m.CLI.AddCommand("heightcurve", 1, 1, m.setHeightCurve, "Sets k of the log curve applied to 3d heights - 0 for linear, 100 lifts the flat areas near the set")
+	m.CLI.AddCommand("supersample", 1, 1, m.setSupersample, "Renders at n times the size and averages down to cut pixel-scale noise - 'supersample 3', 1 for off")
 	m.CLI.AddCommand("stretch", 1, 1, m.setStretch, "Sets whether to force the range of colours to be 0 -> 65536")
 	m.CLI.AddCommand("img", 0, 0, m.buildImageOnly, "Builds in image again from existing data")
 	m.CLI.AddCommand("step", 1, 1, m.setStep, "Mods the height to give steps to it")
@@ -145,7 +149,7 @@ func (m *TCommands) buildMandel(arguments []string) {
 
 // saves the layers as stl files
 func (m *TCommands) threeD(arguments []string) {
-	m.AppData.ThreeD.Save(m.AppData.Layers.Layers)
+	m.AppData.ThreeD.Save(layers.ApplyLogCurve(m.AppData.Layers.Layers, m.AppData.HeightCurve))
 }
 
 // runs the test function of threed
@@ -306,6 +310,29 @@ func (m *TCommands) setShadow(arguments []string) {
 func (m *TCommands) setStretch(arguments []string) {
 	m.AppData.StretchValues = (arguments[0] == "on")
 	fmt.Println("StretchValues", m.AppData.StretchValues)
+}
+
+func (m *TCommands) setSmooth(arguments []string) {
+	m.AppData.Fractal.Smooth = (arguments[0] == "on")
+	fmt.Println("Smooth", m.AppData.Fractal.Smooth)
+}
+
+func (m *TCommands) setHeightCurve(arguments []float64) {
+	if arguments[0] < 0 {
+		fmt.Println("heightcurve must be 0 or more")
+		return
+	}
+	m.AppData.HeightCurve = arguments[0]
+	fmt.Println("HeightCurve set to", arguments[0])
+}
+
+func (m *TCommands) setSupersample(arguments []int) {
+	if arguments[0] < 1 || arguments[0] > 16 {
+		fmt.Println("supersample must be between 1 and 16")
+		return
+	}
+	m.AppData.Fractal.Supersample = uint(arguments[0])
+	fmt.Println("Supersample set to", arguments[0])
 }
 
 func (m *TCommands) setFractalType(arguments []string) {

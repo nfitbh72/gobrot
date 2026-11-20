@@ -11,15 +11,17 @@ import (
 )
 
 type TAppData struct {
-	Fractal             fractals.TFractal
-	Layers              layers.TLayers
-	Image               images.TImage
-	ThreeD              threed.TThreeD
-	Pixels              [][]float64
-	ShadowPixels        [][]float64
-	Canvas              canvas.TCanvas
-	IsShadowGenerated   bool
-	StretchValues       bool
+	Fractal           fractals.TFractal
+	Layers            layers.TLayers
+	Image             images.TImage
+	ThreeD            threed.TThreeD
+	Pixels            [][]float64
+	ShadowPixels      [][]float64
+	Canvas            canvas.TCanvas
+	IsShadowGenerated bool
+	StretchValues     bool
+	//k of the log curve applied to heights in 3d output, 0 for linear
+	HeightCurve         float64
 	ColourProfileString string
 }
 

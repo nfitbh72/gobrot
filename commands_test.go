@@ -167,6 +167,38 @@ func TestSetLayersRejectsInvalidAndKeepsConfig(t *testing.T) {
 	}
 }
 
+func TestSetSupersampleRange(t *testing.T) {
+	c := newTestCommands()
+	for _, bad := range []int{0, -1, 17} {
+		c.setSupersample([]int{bad})
+		if c.AppData.Fractal.Supersample != 0 {
+			t.Errorf("supersample %d was applied", bad)
+		}
+	}
+	for _, good := range []int{1, 16} {
+		c.setSupersample([]int{good})
+		if c.AppData.Fractal.Supersample != uint(good) {
+			t.Errorf("supersample %d was rejected, got %d", good, c.AppData.Fractal.Supersample)
+		}
+	}
+}
+
+func TestSetHeightCurveRange(t *testing.T) {
+	c := newTestCommands()
+	c.setHeightCurve([]float64{-1})
+	if c.AppData.HeightCurve != 0 {
+		t.Errorf("negative curve applied: %v", c.AppData.HeightCurve)
+	}
+	c.setHeightCurve([]float64{10})
+	if c.AppData.HeightCurve != 10 {
+		t.Errorf("curve = %v, want 10", c.AppData.HeightCurve)
+	}
+	c.setHeightCurve([]float64{0})
+	if c.AppData.HeightCurve != 0 {
+		t.Errorf("curve 0 should be accepted, got %v", c.AppData.HeightCurve)
+	}
+}
+
 func TestSetToleranceRange(t *testing.T) {
 	c := newTestCommands()
 	if c.AppData.ThreeD.Tolerance != 0.02 {

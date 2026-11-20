@@ -104,3 +104,107 @@ func TestEscapeIterationBudgetIsExact(t *testing.T) {
 		t.Errorf("budget %v: got %v, want %v", n+1, got, n/(n+1))
 	}
 }
+
+func TestSmoothEscapeIsFractionalAndStaysNearTheWholeStep(t *testing.T) {
+	plain := escapeTimeFractal(1000)
+	smooth := escapeTimeFractal(1000)
+	smooth.Smooth = true
+	distinctPlain := map[float64]bool{}
+	distinctSmooth := map[float64]bool{}
+	for k := 0; k < 200; k++ {
+		c := complex(-0.75+float64(k)*1e-4, 0.1)
+		p := plain.mandelbrotUsingFloat64(c)
+		s := smooth.mandelbrotUsingFloat64(c)
+		if p >= 1.0 || s >= 1.0 {
+			continue
+		}
+		distinctPlain[p] = true
+		distinctSmooth[s] = true
+		//going from radius 2 out to 256 takes a handful more squarings, so allow for that
+		if d := (s - p) * 1000; d < -1 || d > 6 {
+			t.Fatalf("c=%v plain %v smooth %v differ by %v iterations", c, p*1000, s*1000, d)
+		}
+	}
+	if len(distinctSmooth) <= len(distinctPlain) {
+		t.Errorf("smooth gave %d distinct values, plain %d: expected more", len(distinctSmooth), len(distinctPlain))
+	}
+}
+
+func TestSmoothKeepsInSetPointsAtOne(t *testing.T) {
+	m := escapeTimeFractal(200)
+	m.Smooth = true
+	if got := m.mandelbrotUsingFloat64(0); got != 1.0 {
+		t.Errorf("in-set point = %v, want 1.0", got)
+	}
+}
+
+func TestDownsampleAveragesBlocks(t *testing.T) {
+	grid := [][]float64{
+		{0.0, 0.5, 1.0, 1.0},
+		{0.5, 1.0, 1.0, 1.0},
+	}
+	got := downsample(grid, 2)
+	if len(got) != 1 || len(got[0]) != 2 {
+		t.Fatalf("got a %dx%d grid, want 1x2", len(got), len(got[0]))
+	}
+	if got[0][0] != 0.5 || got[0][1] != 1.0 {
+		t.Errorf("got %v, want [0.5 1]", got[0])
+	}
+}
+
+func TestSupersampleKeepsSizeAndAveragesTheBigRender(t *testing.T) {
+	newFractal := func(w, h uint16, s uint) *TFractal {
+		m := &TFractal{Width: w, Height: h, MaxIterations: 100, FractalType: Mandel, Supersample: s, BF: &bigfloat.TBigFloats{Prec: 53}}
+		m.SetBounds("-0.8", "-0.7", "0.05", "0.15")
+		return m
+	}
+	got := newFractal(6, 4, 3).GetFractal()
+	if len(got) != 6 || len(got[0]) != 4 {
+		t.Fatalf("supersampled grid is %dx%d, want 6x4", len(got), len(got[0]))
+	}
+	want := downsample(newFractal(18, 12, 0).GetFractal(), 3)
+	for i := range want {
+		for j := range want[i] {
+			if got[i][j] != want[i][j] {
+				t.Fatalf("[%d][%d] = %v, want %v", i, j, got[i][j], want[i][j])
+			}
+		}
+	}
+	for _, s := range []uint{0, 1} {
+		if g := newFractal(6, 4, s).GetFractal(); len(g) != 6 || len(g[0]) != 4 {
+			t.Errorf("Supersample %d changed the grid size", s)
+		}
+	}
+}
+
+func TestSmoothValueNeverNegative(t *testing.T) {
+	m := escapeTimeFractal(100)
+	m.Smooth = true
+	//escapes at the first step from far outside the set: ln|z|/ln R is well over 2
+	for _, c := range []complex128{complex(1e6, 0), complex(1e6, 1e6)} {
+		if got := m.mandelbrotUsingFloat64(c); got < 0 || got >= 1 {
+			t.Errorf("c=%v gave %v, want a value in [0, 1)", c, got)
+		}
+	}
+}
+
+func TestSupersampleOverTheSampleLimitFallsBack(t *testing.T) {
+	defer func(old int) { maxSupersamples = old }(maxSupersamples)
+	maxSupersamples = 1000
+	m := &TFractal{Width: 20, Height: 20, MaxIterations: 10, FractalType: Mandel, Supersample: 3, BF: &bigfloat.TBigFloats{Prec: 53}}
+	m.SetBounds("-0.8", "-0.7", "0.05", "0.15")
+	//20*20*3*3 = 3600 samples is over the limit, so this renders at 1x
+	want := (&TFractal{Width: 20, Height: 20, MaxIterations: 10, FractalType: Mandel, BF: m.BF, MinX: m.MinX, MaxX: m.MaxX, MinY: m.MinY, MaxY: m.MaxY}).GetFractal()
+	got := m.GetFractal()
+	for i := range want {
+		for j := range want[i] {
+			if got[i][j] != want[i][j] {
+				t.Fatalf("[%d][%d] = %v, want the unsupersampled %v", i, j, got[i][j], want[i][j])
+			}
+		}
+	}
+	maxSupersamples = 3600 //exactly at the limit is allowed
+	if got := m.GetFractal(); len(got) != 20 || len(got[0]) != 20 {
+		t.Errorf("grid is %dx%d, want 20x20", len(got), len(got[0]))
+	}
+}

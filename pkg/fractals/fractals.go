@@ -24,11 +24,15 @@ type TFractal struct {
 	MaxIterations uint
 	FractalType   fractalType
 	Step          float64
-	MinX          *big.Float
-	MinY          *big.Float
-	MaxX          *big.Float
-	MaxY          *big.Float
-	BF            *bigfloat.TBigFloats
+	//Smooth gives a fractional escape time instead of a whole iteration count
+	Smooth bool
+	//Supersample renders at this many times the width and height and averages each block down, 0 or 1 for off
+	Supersample uint
+	MinX        *big.Float
+	MinY        *big.Float
+	MaxX        *big.Float
+	MaxY        *big.Float
+	BF          *bigfloat.TBigFloats
 	//the bounds as typed, kept so they can be re-parsed when the precision changes
 	boundStrings [4]string
 }
@@ -91,8 +95,54 @@ func centre(minX, maxX, minY, maxY float64) complex128 {
 	return complex((minX+maxX)/2.0, (minY+maxY)/2.0)
 }
 
-// gets a 2 dimensional float64 slice of the mandelbrot
+// maxSupersamples limits width x height x n squared, as the supersampled grid is 8 bytes per sample.
+// It is a variable so a test can lower it.
+var maxSupersamples = 100_000_000
+
+// GetFractal computes the fractal, supersampled if Supersample is more than 1: it is rendered at
+// that many times the size and each block of samples averaged into one pixel, so a pixel straddling
+// a filament gets a blend of the samples under it rather than whichever one landed at its corner.
+// A sample inside the set counts as 1.0, so a mixed block ends up partly filled, not empty.
 func (m *TFractal) GetFractal() [][]float64 {
+	s := int(m.Supersample)
+	if s <= 1 {
+		return m.computeFractal()
+	}
+	if int(m.Width)*s > math.MaxUint16 || int(m.Height)*s > math.MaxUint16 {
+		fmt.Printf("supersample %d makes the image larger than %d pixels, rendering without it\n", s, math.MaxUint16)
+		return m.computeFractal()
+	}
+	if samples := int(m.Width) * int(m.Height) * s * s; samples > maxSupersamples {
+		fmt.Printf("supersample %d needs %d samples, more than the limit of %d, rendering without it\n", s, samples, maxSupersamples)
+		return m.computeFractal()
+	}
+	hi := *m
+	hi.Width = m.Width * uint16(s)
+	hi.Height = m.Height * uint16(s)
+	hi.Supersample = 0
+	return downsample(hi.computeFractal(), s)
+}
+
+// downsample averages each s by s block of the grid into one value
+func downsample(grid [][]float64, s int) [][]float64 {
+	out := make([][]float64, len(grid)/s)
+	for i := range out {
+		out[i] = make([]float64, len(grid[0])/s)
+		for j := range out[i] {
+			sum := 0.0
+			for a := 0; a < s; a++ {
+				for b := 0; b < s; b++ {
+					sum += grid[i*s+a][j*s+b]
+				}
+			}
+			out[i][j] = sum / float64(s*s)
+		}
+	}
+	return out
+}
+
+// gets a 2 dimensional float64 slice of the mandelbrot
+func (m *TFractal) computeFractal() [][]float64 {
 	then := time.Now().UnixMilli()
 	var pixels = make([][]float64, m.Width)
 	for i := range pixels {
@@ -178,11 +228,40 @@ func (m *TFractal) mandelbrotUsingFloat64(z complex128) float64 {
 	var v complex128 = 0.0 + 0.0i
 	for i := uint(0); i < m.MaxIterations; i++ {
 		v = v*v + z
-		if cmplx.Abs(v) > 2 {
-			return float64(i) / float64(m.MaxIterations)
+		if abs2 := real(v)*real(v) + imag(v)*imag(v); abs2 > m.bailout2() {
+			return m.escapeValue(i, abs2)
 		}
 	}
 	return 1.0
+}
+
+const (
+	//the escape radius used for smooth colouring: the bigger it is, the smoother the result
+	smoothBailout2 = 256.0 * 256.0
+	plainBailout2  = 4.0
+)
+
+// bailout2 is the squared radius at which a point is counted as escaped
+func (m *TFractal) bailout2() float64 {
+	if m.Smooth {
+		return smoothBailout2
+	}
+	return plainBailout2
+}
+
+// escapeValue turns the iteration i at which |z|^2 first exceeded the bailout into a value in [0, 1).
+// Without Smooth this is the whole iteration count as a fraction of MaxIterations. With Smooth the
+// count is made fractional using the size of |z| at escape (mu = i + 1 - log2(ln|z| / ln R) for escape
+// radius R), which lies between i and i+1, so neighbouring pixels no longer jump in whole steps.
+func (m *TFractal) escapeValue(i uint, abs2 float64) float64 {
+	n := float64(i)
+	if m.Smooth {
+		n += 1 - math.Log2(math.Log(abs2)/math.Log(smoothBailout2))
+	}
+	v := n / float64(m.MaxIterations)
+	//1.0 is reserved for points that never escape
+	//a point far outside the set can smooth to below 0, which would fall outside every layer band
+	return math.Max(0.0, math.Min(v, math.Nextafter(1.0, 0.0)))
 }
 
 func (m *TFractal) squareBigFloat(vreal *big.Float, vimag *big.Float) (*big.Float, *big.Float) {
@@ -208,8 +287,8 @@ func (m *TFractal) mandelbrotUsingBigFloat(real *big.Float, imag *big.Float) flo
 		vrfloat, _ := vreal.Float64()
 		vifloat, _ := vimag.Float64()
 		abs2 := vrfloat*vrfloat + vifloat*vifloat
-		if abs2 > 4.0 {
-			return float64(i) / float64(m.MaxIterations)
+		if abs2 > m.bailout2() {
+			return m.escapeValue(i, abs2)
 		}
 	}
 	return 1.0
