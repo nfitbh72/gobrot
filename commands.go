@@ -43,6 +43,7 @@ func (m *TCommands) initialise(appData *TAppData) {
 	m.CLI.AddCommand("depthscale", 1, 1, m.setDepthScale, "Sets the depth scale of 3d output")
 	m.CLI.AddCommand("cutbelow", 1, 1, m.setCutBelow, "Sets the value to cut when the value (0-1) is below")
 	m.CLI.AddCommand("cutabove", 1, 1, m.setCutAbove, "Sets the value to cut when the value (0-1) is above")
+	m.CLI.AddCommand("tolerance", 1, 1, m.setTolerance, "Sets how far (in output units) the 3d surface may move to save triangles - 0 keeps every height exactly")
 	m.CLI.AddCommand("usage", 0, 0, m.usage, "Reports on memory usage")
 	m.CLI.AddCommand("cp", 1, 1, m.setColourProfile, "Sets the colour profile to use")
 	m.CLI.AddCommand("shadow", 1, 1, m.setShadow, "Sets whether shadows are used with on / off argument")
@@ -169,6 +170,16 @@ func (m *TCommands) setCutBelow(arguments []float64) {
 func (m *TCommands) setCutAbove(arguments []float64) {
 	m.AppData.ThreeD.CutAbove = arguments[0]
 	fmt.Println("CutAbove set to", arguments[0])
+}
+
+func (m *TCommands) setTolerance(arguments []float64) {
+	//written this way round so that NaN is refused too
+	if !(arguments[0] >= 0) || math.IsInf(arguments[0], 0) {
+		fmt.Println("Tolerance must be a number, 0 or more, keeping", m.AppData.ThreeD.Tolerance)
+		return
+	}
+	m.AppData.ThreeD.Tolerance = arguments[0]
+	fmt.Println("Tolerance set to", arguments[0])
 }
 
 func (m *TCommands) buildImageOnly(arguments []string) {
