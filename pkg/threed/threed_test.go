@@ -199,7 +199,8 @@ func TestGetSolidFromLayerIsWatertight(t *testing.T) {
 	}
 	for name, layer := range cases {
 		for _, inverse := range []bool{false, true} {
-			for _, tolerance := range []float64{0, 0.02, 0.5, 1000} {
+			// 1e39 is +Inf as a float32. Whatever the tolerance, the solid has to be closed
+			for _, tolerance := range []float64{0, 0.02, 0.5, 1000, 1e39, math.Inf(1), math.NaN(), -1} {
 				m := &TThreeD{Scale: 100, DepthScale: 0.05, CutAbove: 1, InverseDepth: inverse, Tolerance: tolerance}
 				s := m.GetSolidFromLayer(layer, name)
 				p := meshProblems(s.Triangles)
@@ -309,13 +310,20 @@ func TestToleranceBoundsHowFarTheRoofMoves(t *testing.T) {
 		return 0.5 + 0.2*math.Sin(float64(i)/7) + 0.2*math.Cos(float64(j)/5) + 0.02*rng.Float64()
 	})
 	layers := map[string][][]float64{"hills": hills(100, 61), "rough": rough, "speckle": speckle(5, 50, 50)}
+	// noise has the whole height range between one point and the next. At tolerances close to that
+	// range, adding up the cost of the splits below a point is what keeps the bound: taking the
+	// largest of them would let the roof move further than the tolerance.
+	for seed := int64(0); seed < 6; seed++ {
+		noiseRng := rand.New(rand.NewSource(seed))
+		layers[fmt.Sprint("noise ", seed)] = grid(65, 65, func(i, j int) float64 { return 0.05 + 0.9*noiseRng.Float64() })
+	}
 	for name, layer := range layers {
 		config := &TThreeD{Scale: 100, DepthScale: 0.1, CutAbove: 1, InverseDepth: true}
 		exact := newMesher(config.heights(layer))
 		exact.build(0)
 		want := roofHeightAt(exact)
 		previous := len(exact.triangles)
-		for _, tolerance := range []float32{0, 0.01, 0.05, 0.3} {
+		for _, tolerance := range []float32{0, 0.01, 0.05, 0.3, 1, 2, 3, 4, 5, 6, 8} {
 			m := newMesher(config.heights(layer))
 			m.build(tolerance)
 			got := roofHeightAt(m)
@@ -339,8 +347,58 @@ func TestToleranceBoundsHowFarTheRoofMoves(t *testing.T) {
 			}
 			previous = len(m.triangles)
 		}
-		if name != "speckle" && previous*2 > len(exact.triangles) {
-			t.Errorf("%s: tolerance 0.3 only took %d triangles down to %d", name, len(exact.triangles), previous)
+		if (name == "hills" || name == "rough") && previous*2 > len(exact.triangles) {
+			t.Errorf("%s: tolerance 8 only took %d triangles down to %d", name, len(exact.triangles), previous)
+		}
+	}
+}
+
+// A tolerance that is not a number counts as 0, so the result is the exact mesh.
+func TestToleranceThatIsNotANumberKeepsEveryHeight(t *testing.T) {
+	config := &TThreeD{Scale: 100, DepthScale: 0.1, CutAbove: 1, InverseDepth: true}
+	exact := newMesher(config.heights(hills(40, 40)))
+	exact.build(0)
+	for _, tolerance := range []float32{float32(math.NaN()), -1} {
+		m := newMesher(config.heights(hills(40, 40)))
+		m.build(tolerance)
+		if !reflect.DeepEqual(m.triangles, exact.triangles) {
+			t.Errorf("tolerance %v: %d triangles, the exact mesh has %d", tolerance, len(m.triangles), len(exact.triangles))
+		}
+	}
+}
+
+// A layer too long for the mesher's grid is refused, not attempted.
+func TestOversizedLayerIsRefused(t *testing.T) {
+	long := grid(maxGridSize+2, 2, func(i, j int) float64 { return 0.5 })
+	if checkSize(long) == nil {
+		t.Error("a layer one point over the limit was accepted")
+	}
+	m := &TThreeD{Scale: 100, DepthScale: 0.1, CutAbove: 1}
+	if s := m.GetSolidFromLayer(long, "long"); len(s.Triangles) != 0 {
+		t.Errorf("oversized layer gave %d triangles, want 0", len(s.Triangles))
+	}
+	if err := checkSize(grid(maxGridSize+1, 2, func(i, j int) float64 { return 0.5 })); err != nil {
+		t.Errorf("a layer at the limit was refused: %v", err)
+	}
+}
+
+// The cost of leaving a triangle whole has to add its own cost to the worst cost below it. Here
+// the centre is 1 off the plane of the corners, and the four points half-way to the corners are a
+// further 0.9 off the planes below that: 1.4 off the plane of the corners. Taking the larger of
+// the two costs, 1, would leave the layer as two triangles at a tolerance of 1.2.
+func TestToleranceAddsUpCostsAcrossLevels(t *testing.T) {
+	heights := [][]float32{
+		{5, 5, 5, 5, 5},
+		{5, 6.4, 5.5, 6.4, 5},
+		{5, 5.5, 6, 5.5, 5},
+		{5, 6.4, 5.5, 6.4, 5},
+		{5, 5, 5, 5, 5},
+	}
+	m := newMesher(heights)
+	m.build(1.2)
+	for point, z := range roofHeightAt(m) {
+		if moved := math.Abs(z - float64(heights[point[0]][point[1]])); moved > 1.2+1e-5 {
+			t.Errorf("roof moved by %g at %v, tolerance 1.2", moved, point)
 		}
 	}
 }

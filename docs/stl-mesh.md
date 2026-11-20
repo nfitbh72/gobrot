@@ -11,9 +11,10 @@ Each layer is a grid of heights. The solid has three parts:
 - vertical **walls** wherever material meets empty space or the edge of the layer.
 
 A grid point with a height of 0 is empty. **Empty areas are left out of the solid**: there is no
-floor under them, and they get walls around them like any other edge. (Decided on #43. With
-`InverseDepth`, which is the default, a layer value of 1.0 is height 0; that is also what
-`cutbelow` and `cutabove` write.)
+floor under them, and they get walls around them like any other edge. (The question was raised
+on #38, #41 first built it this way, and the developer kept it for this rebuild when asking for
+#43 to be executed. With `InverseDepth`, which is the default, a layer value of 1.0 is height 0;
+that is also what `cutbelow` and `cutabove` write.)
 
 ## What "valid" means
 
@@ -72,6 +73,9 @@ exactly flat or exactly planar.
 The tolerance only affects the roof's heights. The outline of the material, the base and the
 walls' positions are exact at any setting.
 
+The command refuses negative values, `inf` and `nan`. The mesher itself is safe with any value: it
+treats a negative or not-a-number tolerance as 0, and always keeps the outline.
+
 ## Measured
 
 Same renders on `main` before the rebuild and after, all passing the checks above. Sizes in MB.
@@ -96,4 +100,10 @@ render at any tolerance. Renders whose empty areas have a simple outline shrink 
   The mesher already holds triangles as vertex references, so this is a writer, not a redesign.
 - **Simplifying the outline.** Straightening the outline within a tolerance would lift the floor
   described above, at the cost of changing where material is.
+- **Long, thin layers.** The grid is a square as wide as the layer's longer side, rounded up to a
+  power of two, so memory and time follow that square and not the layer. Square and near-square
+  layers use far less memory than the old generator; long thin ones use more (a 8200×125 layer
+  took 3.2 GB against 1.3 GB). A layer over 16,385 points on its longer side is refused with a
+  message. The fix is to cover the layer with several square blocks, side by side. Worth doing
+  when a real render is past about 4:1, or over 4,097 points a side.
 - **Non-square layers are stretched** to `Scale` × `Scale`, as before. Not changed here.

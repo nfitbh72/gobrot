@@ -31,6 +31,10 @@ func (m *TThreeD) Save(layers [][][]float64) {
 	for n, layer := range layers {
 		filename := m.FilenameBase + strconv.Itoa(n) + ".stl"
 		name := "out" + strconv.Itoa(n)
+		if err := checkSize(layer); err != nil {
+			fmt.Println("Not saving "+filename+":", err)
+			continue
+		}
 		solid := m.GetSolidFromLayer(layer, name)
 		fmt.Println("Saving " + filename)
 		err := solid.WriteFile(filename)
@@ -74,6 +78,20 @@ func (m *TThreeD) heights(layer [][]float64) [][]float32 {
 	return out
 }
 
+// checkSize reports whether a layer is small enough to turn into a solid. The mesher works on a
+// square grid as wide as the layer's longer side rounded up to a power of two, so the limit is on
+// the longer side.
+func checkSize(layer [][]float64) error {
+	w, h := len(layer), 0
+	if w > 0 {
+		h = len(layer[0])
+	}
+	if gridSize(w, h) > maxGridSize {
+		return fmt.Errorf("layer of %d x %d points is too large for 3d output, which takes up to %d points a side", w, h, maxGridSize+1)
+	}
+	return nil
+}
+
 // create a solid from the layer values.
 //
 // The solid is a heightmap slab: a roof following the layer, a flat base at z = 0 and walls joining
@@ -82,10 +100,13 @@ func (m *TThreeD) heights(layer [][]float64) [][]float32 {
 // by fewer, larger triangles, as far as Tolerance allows. See mesh.go and docs/stl-mesh.md.
 //
 // The result has no zero-area triangles and every edge is shared by exactly two triangles with
-// opposite winding.
+// opposite winding. A layer that checkSize refuses gives a solid with no triangles.
 func (m *TThreeD) GetSolidFromLayer(layer [][]float64, name string) stl.Solid {
 	solid := stl.Solid{
 		Name: name,
+	}
+	if checkSize(layer) != nil {
+		return solid
 	}
 	mesh := newMesher(m.heights(layer))
 	mesh.build(float32(m.Tolerance))

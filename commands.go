@@ -169,8 +169,9 @@ func (m *TCommands) setCutAbove(arguments []float64) {
 }
 
 func (m *TCommands) setTolerance(arguments []float64) {
-	if arguments[0] < 0 {
-		fmt.Println("Tolerance must be 0 or more, keeping", m.AppData.ThreeD.Tolerance)
+	//written this way round so that NaN is refused too
+	if !(arguments[0] >= 0) || math.IsInf(arguments[0], 0) {
+		fmt.Println("Tolerance must be a number, 0 or more, keeping", m.AppData.ThreeD.Tolerance)
 		return
 	}
 	m.AppData.ThreeD.Tolerance = arguments[0]

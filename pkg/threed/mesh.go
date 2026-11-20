@@ -36,16 +36,29 @@ type mesher struct {
 	triangles [][3]vertex
 }
 
-// newMesher builds the grid for heights[i][j], where a height of 0 means no material.
+// maxGridSize is the largest grid the mesher will build, in cells per side. The grid is square
+// whatever the shape of the layer, and its arrays take about 11 bytes a point: close to 3 GB at
+// this size. It also keeps every vertex number within a uint32.
+const maxGridSize = 16384
+
+// gridSize returns the cells per side of the grid for a layer of w by h points: the longer side
+// rounded up to a power of two.
+func gridSize(w, h int) int {
+	size := 1
+	for size < w-1 || size < h-1 {
+		size *= 2
+	}
+	return size
+}
+
+// newMesher builds the grid for heights[i][j], where a height of 0 means no material. The layer
+// must fit in maxGridSize.
 func newMesher(heights [][]float32) *mesher {
 	m := &mesher{w: len(heights)}
 	if m.w > 0 {
 		m.h = len(heights[0])
 	}
-	m.size = 1
-	for m.size < m.w-1 || m.size < m.h-1 {
-		m.size *= 2
-	}
+	m.size = gridSize(m.w, m.h)
 	m.stride = m.size + 1
 	n := m.stride * m.stride
 	m.z = make([]float32, n)
@@ -66,10 +79,15 @@ func (m *mesher) index(x, y int) int {
 }
 
 // build makes the whole solid. No point of the roof ends up further than tolerance, measured
-// vertically, from where the full-resolution roof would have put it.
+// vertically, from where the full-resolution roof would have put it. A tolerance that is not a
+// number, or is negative, counts as 0. An infinite one is allowed: it flattens the roof as far as
+// the outline of the material lets it.
 func (m *mesher) build(tolerance float32) {
 	if m.w < 2 || m.h < 2 {
 		return
+	}
+	if !(tolerance >= 0) {
+		tolerance = 0
 	}
 	m.removePinches()
 
@@ -326,7 +344,8 @@ func (m *mesher) emit(ax, ay, bx, by, cx, cy int, tolerance float32, roof bool) 
 	}
 	if !isSmallest(ax, bx) {
 		mx, my := (ax+bx)/2, (ay+by)/2
-		if m.err[m.index(mx, my)] > tolerance {
+		//an infinite cost means the triangle must be split, even at an infinite tolerance
+		if e := m.err[m.index(mx, my)]; e > tolerance || math.IsInf(float64(e), 1) {
 			m.emit(cx, cy, ax, ay, mx, my, tolerance, roof)
 			m.emit(bx, by, cx, cy, mx, my, tolerance, roof)
 			return
