@@ -74,6 +74,7 @@ func (appData *TAppData) initialise() {
 		DepthScale:   0.1,
 		CutBelow:     0.0,
 		CutAbove:     1.0,
+		Tolerance:    0.02,
 	}
 	//default config for the canvas: 10% fractal, 90% canvas shape
 	appData.Canvas = canvas.TCanvas{MandelEffect: 0.1}

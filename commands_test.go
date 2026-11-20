@@ -165,3 +165,18 @@ func TestSetLayersRejectsInvalidAndKeepsConfig(t *testing.T) {
 		t.Errorf("valid layers rejected: %v", c.AppData.Layers.LayersConfig)
 	}
 }
+
+func TestSetToleranceRange(t *testing.T) {
+	c := newTestCommands()
+	if c.AppData.ThreeD.Tolerance != 0.02 {
+		t.Errorf("default tolerance = %v, want 0.02", c.AppData.ThreeD.Tolerance)
+	}
+	c.setTolerance([]float64{-0.1})
+	if c.AppData.ThreeD.Tolerance != 0.02 {
+		t.Errorf("negative tolerance was applied: %v", c.AppData.ThreeD.Tolerance)
+	}
+	c.setTolerance([]float64{0})
+	if c.AppData.ThreeD.Tolerance != 0 {
+		t.Errorf("tolerance 0 was rejected: %v", c.AppData.ThreeD.Tolerance)
+	}
+}
