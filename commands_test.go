@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/nfitbh72/gobrot/pkg/fractals"
+	"math"
 	"reflect"
 	"testing"
 )
@@ -163,5 +164,23 @@ func TestSetLayersRejectsInvalidAndKeepsConfig(t *testing.T) {
 	c.setLayers([]float64{0.5})
 	if len(c.AppData.Layers.LayersConfig) != 2 {
 		t.Errorf("valid layers rejected: %v", c.AppData.Layers.LayersConfig)
+	}
+}
+
+func TestSetToleranceRange(t *testing.T) {
+	c := newTestCommands()
+	if c.AppData.ThreeD.Tolerance != 0.02 {
+		t.Errorf("default tolerance = %v, want 0.02", c.AppData.ThreeD.Tolerance)
+	}
+	// "inf" and "nan" get this far: the CLI parses arguments with strconv.ParseFloat
+	for _, bad := range []float64{-0.1, math.Inf(1), math.Inf(-1), math.NaN()} {
+		c.setTolerance([]float64{bad})
+		if c.AppData.ThreeD.Tolerance != 0.02 {
+			t.Errorf("tolerance %v was applied: %v", bad, c.AppData.ThreeD.Tolerance)
+		}
+	}
+	c.setTolerance([]float64{0})
+	if c.AppData.ThreeD.Tolerance != 0 {
+		t.Errorf("tolerance 0 was rejected: %v", c.AppData.ThreeD.Tolerance)
 	}
 }

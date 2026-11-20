@@ -13,7 +13,7 @@ precision allows.
 - **Arbitrary precision**: big-float coordinates with configurable precision (`big`)
 - **PNG output** with several colour profiles (`gray`, `gray2`, `cycle`, `gpt1`)
 - **Layers**: split the escape-time depth into bands, one PNG/STL per band
-- **3D export**: STL meshes with base and sides, depth scaling and cut thresholds
+- **3D export**: closed STL solids with base and sides, depth scaling, cut thresholds and a size/detail tolerance
 - **Canvas effects**: project the fractal onto a shape (`dome`, `bowl`, `semiCylinder`, `test`)
 - **Circle trim**: crop the output to a circle
 - **ASCII preview** in the terminal
@@ -87,6 +87,7 @@ Type `help` for the list of commands, or `help <command>` for details on one.
 | `3d` | | Save each layer as an STL file |
 | `depthscale` | `<float>` | Depth scale of the 3D output (default 0.1) |
 | `cutbelow` / `cutabove` | `<float>` | Cut 3D geometry outside this 0–1 range |
+| `tolerance` | `<float>` | How far the 3D surface may move, in output units, to save triangles (default 0.02; 0 keeps every height exactly) |
 | `test` | | Write a test STL file |
 | `config` | | Show the current configuration |
 | `usage` | | Report memory usage |
@@ -112,7 +113,7 @@ pkg/images          PNG and ASCII output
 pkg/colourprofiles  colour profiles
 pkg/canvas          canvas projections
 pkg/shapes          circle trimming
-pkg/threed          STL generation
+pkg/threed          STL generation (design: docs/stl-mesh.md)
 pkg/usage           memory reporting
 pkg/threads         goroutine pool (work in progress)
 samples/            example XML settings
